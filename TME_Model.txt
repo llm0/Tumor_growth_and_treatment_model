@@ -1,0 +1,2412 @@
+%% Nikmaneshi's TME code
+clear; clc; close all
+tic
+
+global con1 con2 con3 prooob1 prooob2 startang plum1 pins1
+con1=0;
+con2=0;
+con3=0;
+prooob1=0;
+prooob2=0;
+
+global len 
+global N  N1
+global slen
+global wlen
+
+global sstt
+
+global threedLattice 
+
+global nutr         
+global G            
+global pres         
+global TAF          
+global rv           
+global rv0          
+global Ang1         
+global ra0          
+global ra1          
+global ra2          
+global Ang2         
+global v_velo       
+
+% global MS
+global waste
+global activity     
+global celltype     
+global cell_energy  
+global drug
+global adrug
+global CAS
+
+global fib          
+global mmp          
+
+global vess         
+global vess_tag     
+global vess_age     
+global vess_D
+global branch_tag
+
+global hotpoint     
+global mu_blood
+global HD
+
+global index_bias   
+global stackvalue   
+global stackcount   
+global vessgrowth_flag
+global branchrecord    
+global sprout_index
+global nec
+global iteration
+global num
+
+global s_rep
+global KP1
+
+global LP
+
+global p_ins     
+global p_lum     
+global p_lum_new
+global p_ins_new
+global Uins
+
+global u_lum     
+global pins_t   
+global WSS
+global probabel
+
+
+len     = 10;
+N       = 101;
+N1 = 81;
+slen    = N*N;
+wlen    = N*N*N1;
+
+nutr        = ones(1,wlen);    
+waste       = ones(1,wlen);
+TAF         = zeros(1,wlen)';
+rv         = zeros(1,wlen)';
+rv0         = zeros(1,wlen)';
+Ang1         = zeros(1,wlen)';
+ra0         = zeros(1,wlen)';
+ra1         = zeros(1,wlen)';
+ra2         = zeros(1,wlen)';
+Ang2         = zeros(1,wlen)';
+v_velo       = zeros(1,wlen)';
+CAS         = zeros(1,wlen)';
+
+plum1 = zeros(1,wlen);
+pins1 = zeros(1,wlen);
+
+drug        = zeros(1,wlen);
+adrug        = zeros(1,wlen);
+G           = ones(1,wlen);
+
+KP1 =9e-15*ones(N,N,N1)*4;
+
+fib        = ones(1,wlen);
+mmp        = zeros(1,wlen);
+
+
+sstt =0;
+kiltip=0;
+
+pres        = zeros(1,wlen);
+pins_t        = zeros(1,wlen);
+p_ins        = zeros(1,wlen);
+p_lum        = zeros(1,wlen);
+p_lum_new = zeros(1,wlen);
+p_ins_new = zeros(1,wlen);
+u_lum        = zeros(1,wlen);
+WSS        = zeros(1,wlen);
+activity    = zeros(1,wlen);  
+celltype    = zeros(1,wlen);
+cell_energy = zeros(1,wlen);
+num=zeros(1,wlen);
+s_rep = zeros(1,wlen);
+Uins = zeros(N,N,N1);
+ta_vegf = zeros(1,wlen);
+Q_lum =zeros(1,wlen);
+C =zeros(1,wlen);
+
+S_WSS =zeros(1,wlen);
+S_P =zeros(1,wlen);
+S_M =zeros(1,wlen);
+S_VEGF =zeros(1,wlen);
+S_tot =zeros(1,wlen);
+
+vess        = cell(1,wlen);
+vess_tag    = zeros(1,wlen);
+vess_age    = zeros(1,wlen);
+vess_D  = zeros(1,wlen);
+branch_tag = zeros(1,wlen);
+
+LP  = zeros(1,wlen);
+
+hotpoint        = zeros(1,wlen);
+branchrecord    = zeros(1,wlen);
+
+stackvalue      = [0 0];
+vessgrowth_flag = 0;
+stackcount      = 0;
+
+mu_blood = 1.2e-3*0.0075*ones(1,wlen);
+HT = 0.45;
+HD = HT*ones(1,wlen);
+
+pr = zeros(1,wlen);
+
+xn          = linspace(0,len,N);
+xn1          = linspace(0,len,N1);
+[Y, X, Z]     = meshgrid(xn,xn,xn1);  
+threedLattice     = [X(:),Y(:),Z(:)];
+
+nec     = 1e-4;  
+
+clear X Y Z fil flnm xn filepath subfold1 subfold2
+
+boundary = mainFarField(threedLattice,len);  
+initialization();                        
+
+
+cu1 = 0;
+cu2=0;
+cu3=0;
+
+
+varalist = {'TAF', 'activenumber', 'act', 'activity', 'cell_energy', ...
+    'celltype', 'necrosisnumber', 'quiescentnumber', 'pres', 'nutr', 'G', ...
+    'v_age', 'vess', 'vess_age', 'vess_tag', 'waste', 'mmp','fib', ...
+    'p_lum', 'p_ins', 'pins_t','u_lum','mu_blood','HD','vess_D','Ang1','Ang2','v_velo', ...
+    'ra0', 'ra1', 'ra2', 'rv', 'rv0', 'WSS','CAS','drug','branchrecord', 'adrug','LP','KP1','Uins','vindexsave'};
+
+
+vindexsave = [];
+
+
+
+clear vindex i j k X Y Z xx yy zz
+
+
+totDays     = 60;  
+tau         = totDays*24*3600;  
+L           = 1e-2;   
+k           = 1/(len*(N-1));
+h           = 1/(N-1);  
+
+c0      = 4.3e-4;  
+n0      = 8.4;  
+w0      = 10.5;  
+
+
+mm0 = 1.36e-6; 
+g0 = 8.7;
+c0 = 1.075e-5; 
+d0=2.13;
+
+Dn          = 8e-14; 
+rho_n0      = 6.8e-4;
+lambda_n0   = 3.0e-5;
+
+Dw         = 4e-14; 
+rho_w0     = 3*1e-5; 
+lambda_w0  = 2.5e-5; 
+
+Dc          = 1.2e-13;
+rho_c0      = 2e-9;  
+lambda_c0   =2.5e-18;
+
+Da2 = 1e-13;
+Da1 = 0;
+e0 = 1e-7; 
+Ka = 1.5e-5;
+alpph = 1e-7;
+a0 = 5e-9;
+k_1 = 3.7e-5; 
+k_2 = 3e-5; 
+k1 = 10e-6; 
+k2 = 11.58e-6; 
+k0 = 13e-6; 
+k_0 = 6.3e-6; 
+mu0 = 2.78e-14;
+
+Dd              = 1.5e-14; 
+lambda_d0       = 2.5e-7;  
+lambda_decay    = 1.0e-8*10;  
+
+pres_scale  = 1;  
+cap_pres    = 30; 
+p0          = 60*pres_scale; 
+
+Kp          = 4.5e-15;  
+KPP = 6.4e-12;
+u0          = 5e-6;  
+pv          = cap_pres/p0;  
+sigma0      = 0.15;
+amplitude0  = 0.08*pres_scale;  
+
+
+Pvp         = 5.73e-9;  
+
+sigmaT = 0.91*1e-2*ones(N,N,N1);
+pb = 2.67e3*0.0075; 
+pI = 1.33e3*0.0075*ones(N,N,N1);  
+SV = 7e3*ones(N,N,N1);
+
+
+
+
+k_AR2       = 500;
+
+THR = 2.5;
+al = 0.5;
+tab_D=50e-6;
+Q_ref = 1.909e-11;  
+K0 = 41e3*0.00750062; 
+D0 = 30e-6;
+V0=0.25*c0;
+km = 0.12; 
+ke = 5;    
+ks = 0.35; 
+kp = 0.5;  
+ta_ref = 0.103;
+E=6.5;  
+b=0.19;
+ta_c = 1;
+p_c=3;  
+
+
+
+V_Endo = 5.2e-16; 
+ome = 0.576/3600; 
+al_1 = 2.78e-6;
+al_2 = 2.22e-5;
+del_1 = 8.33e-7; 
+del_2 = 5.56e-7; 
+tet_2 = 1;
+tet_r = 5.9/5.2/4*1e-2*1e-3; 
+tet_b = 1;
+tet_ec = 4;
+tet_y = 6.8/5.2/4*1e-3*1e-3; 
+rho = 3.3/5.2/4*1e-3; 
+gama = 0.8/3600;
+del_y = 0.0198/3600;
+al_y = 0.198/3600;
+s_1 = 1e-6;
+
+
+
+kn=1;
+index_bias0=[];
+index_bias=[];
+seq=-kn:kn;
+for i=-kn:kn
+    index_bias0=[index_bias0,seq+N*i];
+end
+for j=-kn:kn
+    index_bias=[index_bias,index_bias0+slen*j];
+end
+
+clear i j
+
+
+knn=1;
+pres_bias0=[];
+pres_bias=[];
+seq=-knn:knn;
+for i=-knn:knn
+    pres_bias0=[pres_bias0,seq+N*i];
+end
+for j=-knn:knn
+    pres_bias=[pres_bias,pres_bias0+slen*j];
+end
+
+clear index_bias0 pres_bias0 totDays i j kn knn seq
+
+t1=setdiff(1:wlen,boundary);      
+p_ins (boundary) = 0;
+
+
+sprout_index=[];
+
+
+
+treatday = 12;
+
+
+lambda_ad1f=0;
+
+angiocon=0;
+
+calit = 859;
+
+startdrug= treatday*33+1;    
+
+for iteration=startdrug:calit 
+    
+    
+    
+  
+    
+    activenumber(iteration)=length(find(celltype==1));         
+    quiescentnumber(iteration)=length(find(celltype==0.95));   
+    necrosisnumber(iteration)=length(find(celltype==nec));     
+    
+
+
+ 
+    t=reshape(TAF,N,N,N1);
+    r0v=reshape(rv0,N,N,N1);
+    rvv=reshape(rv,N,N,N1);
+    ang1=reshape(Ang1,N,N,N1);
+    r1a=reshape(ra1,N,N,N1);
+    r2a=reshape(ra2,N,N,N1);
+    r0a=reshape(ra0,N,N,N1);
+    ang2=reshape(Ang2,N,N,N1);
+    LPP=reshape(LP,N,N,N1);
+
+    n=reshape(nutr,N,N,N1);
+    gl=reshape(G,N,N,N1);
+    v=reshape(vess_tag,N,N,N1);
+    c=reshape(celltype,N,N,N1);
+    w=reshape(waste,N,N,N1);
+    v_age=reshape(vess_age,N,N,N1);
+    act=reshape(activity,N,N,N1);
+    d=reshape(drug,N,N,N1);
+    ad=reshape(adrug,N,N,N1);
+    f=reshape(fib,N,N,N1);
+    mm=reshape(mmp,N,N,N1);
+    Cas=reshape(CAS,N,N,N1);
+    Ulum=reshape(u_lum,N,N,N1);
+    vdiam = reshape(vess_D,N,N,N1);
+    %
+    LPP_N = 3.6e-10/5;
+    
+    
+    
+    
+    
+    
+    
+    vess_D = 2*vess_age./(k_AR2+vess_age);     
+    
+    if iteration>=300
+        if mod(iteration-1,10)==0  || iteration==startdrug  
+            
+            if sstt>1
+                branch_index = find(branch_tag>=1);
+                if ~isempty(branch_index)
+                    cu1=cu1+1;
+                    for nn=1:length(branch_index)
+                        rr = branch_index(nn);
+                        if abs(u_lum(rr+vess{rr}.opdirect))/abs(u_lum(rr+vess{rr}.opdirect2)+1e-8)<THR
+                            HD(rr+vess{rr}.opdirect)=HD(rr)/(1+al*u_lum(rr+vess{rr}.opdirect)/(u_lum(rr+vess{rr}.opdirect2)+1e-8));
+                            HD(rr+vess{rr}.opdirect2)=HD(rr)/(1+(al*u_lum(rr+vess{rr}.opdirect)/(u_lum(rr+vess{rr}.opdirect2)+1e-8)).^-1);
+                        else
+                            HD(rr+vess{rr}.opdirect)=HD(rr);
+                            HD(rr+vess{rr}.opdirect2)=0;
+                        end
+                    end
+                end
+                
+                vess_D(((p_lum(vess_tag>0.95)-pins_t(vess_tag>0.95)*p0+p_c)<=0))=0.0019;
+                if isempty((p_lum(vess_tag>0.95)-pins_t(vess_tag>0.95)*p0+p_c)<=0)
+                    vess_D(vess_tag>0.95) = vess_D(vess_tag>0.95).*((p_lum(vess_tag>0.95)-pins_t(vess_tag>0.95)*p0+p_c)./E).^b;
+                end
+               end
+        end
+    end
+    
+    
+    mu_plasma = 1.2e-3*0.0075; 
+    
+    
+    vess_D(vess_D<=0)=0.0019;
+    vess_D = vess_D.*vess_tag;
+    
+    C(vess_tag>0.95) = (0.8+exp(-0.075.*vess_D(vess_tag>0.95).*50).*(-1+1./(1+10^(-11).*(vess_D(vess_tag>0.95).*50).^12))+1./(1+10^(-11).*(vess_D(vess_tag>0.95).*50).^12));
+    
+    mu_blood(vess_tag>0.95) = 6.*exp(-0.085.*(vess_D(vess_tag>0.95).*50))+3.2-2.44.*exp(-0.06.*(vess_D(vess_tag>0.95).*50).^0.645);
+    
+    mu_blood(mu_blood<=0)= mu_plasma;
+    
+    mu_blood(vess_tag>0.95) = mu_plasma.*(1+(mu_blood(vess_tag>0.95)-1).*(((1-HD(vess_tag>0.95)).^(C(vess_tag>0.95))-1)./((1-0.45).^(C(vess_tag>0.95))-1))...
+        .*(vess_D(vess_tag>0.95).*50./(vess_D(vess_tag>0.95).*50-1.1)).^2).*(vess_D(vess_tag>0.95).*50./(vess_D(vess_tag>0.95).*50-1.1)).^2;
+    
+    v_D = reshape(vess_D/2,N,N,N1);  
+    
+    
+    if mod(iteration-1,20)==0 || iteration==startdrug
+        pres=zeros(1,wlen);        
+        cindex=find(celltype~=0);  
+
+        for tt=1:length(cindex)
+            s=cindex(tt);
+            
+            density  = sum(celltype(s+index_bias)>0)/length(index_bias);
+            
+            dist=sqrt(sum((threedLattice(s+pres_bias,:)-repmat(threedLattice(s,:),length(pres_bias),1)).^2,2));
+            
+            amplitude=amplitude0;
+            
+            sigma=sigma0*density^2/(density^2.+0.5^2)+0.05;
+            
+            pres(s+pres_bias)=pres(s+pres_bias) + amplitude*(exp(-dist'.^2./(2*sigma^2)));
+        end
+        
+        
+        pins_t = pres + p_ins;
+        
+        pins_t(pins_t<=0)=0;
+        
+        
+        gradp=zeros(3,wlen);
+        
+        pins_t=pins_t/p0;
+        
+        gradp(1,t1) = (p_ins(t1+1) - p_ins(t1-1))/ (2*h);
+        gradp(2,t1) = (p_ins(t1+N) - p_ins(t1-N))/ (2*h);
+        gradp(3,t1) = (p_ins(t1+slen)-p_ins(t1-slen)) /(2*h);
+        
+        
+        KP1(cindex)=9e-15*(1-1.5*pres(cindex)/(p0+pres(cindex)));
+        
+        ux=-KP1./(u0*L).*reshape(gradp(1,:),N,N,N1);
+        uy=-KP1./(u0*L).*reshape(gradp(2,:),N,N,N1);
+        uz=-KP1./(u0*L).*reshape(gradp(3,:),N,N,N1);
+        
+        
+        ux=reshape(ux,N,N,N1);
+        uy=reshape(uy,N,N,N1);
+        uz=reshape(uz,N,N,N1);
+        
+        Uins = sqrt(ux.^2+uy.^2+uz.^2);
+        
+    end
+    
+    
+    
+    
+    p = reshape(p_ins,N,N,N1);
+    cap_pres1 = reshape(p_lum,N,N,N1);
+    
+    for repp = 1:2
+        
+        c1=1-6*Dn*tau*k/(L^2*h^2);
+        c2=Dn*tau*k/(L^2*h^2)-tau*k*u0/L*ux(2:N-1,2:N-1,2:N1-1)/(2*h);
+        c3=Dn*tau*k/(L^2*h^2)-tau*k*u0/L*uy(2:N-1,2:N-1,2:N1-1)/(2*h);
+        c4=Dn*tau*k/(L^2*h^2)-tau*k*u0/L*uz(2:N-1,2:N-1,2:N1-1)/(2*h);
+        c5=Dn*tau*k/(L^2*h^2)+tau*k*u0/L*ux(2:N-1,2:N-1,2:N1-1)/(2*h);
+        c6=Dn*tau*k/(L^2*h^2)+tau*k*u0/L*uy(2:N-1,2:N-1,2:N1-1)/(2*h);
+        c7=Dn*tau*k/(L^2*h^2)+tau*k*u0/L*uz(2:N-1,2:N-1,2:N1-1)/(2*h);
+        
+        
+        Dp = (LPP_N/mean(LPP(c>=0.95))).^(1/6).*400.*ones(N,N,N1);   
+        Dp((c>0)) = 400;  
+        sigmaT((c>0))=8.7e-5;
+        Diaad = .36; 
+        sd = Diaad/Dp;
+        sigmaD = (1-(1-sd).^2).^2;  
+        
+        SV = 7e3*ones(N,N,N1);
+        SV(cindex) = 2e4;
+        SV=SV.*v_D;  
+        
+        plum=reshape(p_lum,N,N,N1);
+        pI(cindex) = 2e3*0.0075;
+        Delta_P = (plum-p-sigmaT.*(pb-pI));
+
+        Pvp=2e-9/10e-6;
+        Fv = LPP.*SV.*Delta_P;
+        Pev = LPP.*Delta_P.*(1-sigmaD)./Pvp;
+        
+
+        rho_n = Fv.*(1-sigmaD)*n0.*1 + Pvp*n0.*(1.7-n).* Pev./((exp(Pev)-1)+1e-18);
+        rho_nf = k*tau/n0*rho_n(2:N-1,2:N-1,2:N1-1).*v(2:N-1,2:N-1,2:N1-1);
+        
+        
+        
+        lambda_n = lambda_n0.*act(2:N-1,2:N-1,2:N1-1);
+        
+        lambda_nf = k*tau/n0*lambda_n.*c(2:N-1,2:N-1,2:N1-1);
+        
+        n(2:N-1,2:N-1,2:N1-1)= c1.*n(2:N-1,2:N-1,2:N1-1) + c2.*n(3:N,2:N-1,2:N1-1) + c3.*n(2:N-1,3:N,2:N1-1) ...
+            + c4.*n(2:N-1,2:N-1,3:N1) + c5.*n(1:N-2,2:N-1,2:N1-1) + c6.*n(2:N-1,1:N-2,2:N1-1) ...
+            + c7.*n(2:N-1,2:N-1,1:N1-2) ...
+            + rho_nf - lambda_nf;
+        
+        n(n<0)=0;
+        
+        temp_n=n;
+        temp_n(boundary)=1;
+        nutr=temp_n(:)';
+        
+
+        DG=Dn/2*.27;
+        cg1=1-6*DG*tau*k/(L^2*h^2);
+        cg2=DG*tau*k/(L^2*h^2)-tau*k*u0/L*ux(2:N-1,2:N-1,2:N1-1)/(2*h);
+        cg3=DG*tau*k/(L^2*h^2)-tau*k*u0/L*uy(2:N-1,2:N-1,2:N1-1)/(2*h);
+        cg4=DG*tau*k/(L^2*h^2)-tau*k*u0/L*uz(2:N-1,2:N-1,2:N1-1)/(2*h);
+        cg5=DG*tau*k/(L^2*h^2)+tau*k*u0/L*ux(2:N-1,2:N-1,2:N1-1)/(2*h);
+        cg6=DG*tau*k/(L^2*h^2)+tau*k*u0/L*uy(2:N-1,2:N-1,2:N1-1)/(2*h);
+        cg7=DG*tau*k/(L^2*h^2)+tau*k*u0/L*uz(2:N-1,2:N-1,2:N1-1)/(2*h);
+        
+        
+        
+        Diaad = 1.5; 
+        sd = Diaad/Dp;
+        sigmaD = (1-(1-sd).^2).^2;  
+        
+        Delta_P = (plum-p-sigmaT.*(pb-pI));
+
+        Pvp=2.7e-10/10e-6;
+        Fv = LPP.*SV.*Delta_P;
+        Pev = LPP.*Delta_P.*(1-sigmaD)./Pvp;
+        
+
+        rho_g = Fv.*(1-sigmaD)*g0.*1 + Pvp*g0.*(1.5-gl).* Pev./((exp(Pev)-1)+1e-18);
+        rho_gf = k*tau/g0*rho_g(2:N-1,2:N-1,2:N1-1).*v(2:N-1,2:N-1,2:N1-1);
+        
+        
+        lambda_g =1/6*lambda_n0.*act(2:N-1,2:N-1,2:N1-1);   
+        
+
+        lambda_gf = k*tau/g0*lambda_g.*c(2:N-1,2:N-1,2:N1-1);
+        
+        gl(2:N-1,2:N-1,2:N1-1)= cg1.*gl(2:N-1,2:N-1,2:N1-1) + cg2.*gl(3:N,2:N-1,2:N1-1) + cg3.*gl(2:N-1,3:N,2:N1-1) ...
+            + cg4.*gl(2:N-1,2:N-1,3:N1) + cg5.*gl(1:N-2,2:N-1,2:N1-1) + cg6.*gl(2:N-1,1:N-2,2:N1-1) ...
+            + cg7.*gl(2:N-1,2:N-1,1:N1-2) ...
+            + rho_gf - lambda_gf;
+        
+        gl(gl<0)=0;
+        
+        temp_g=gl;
+        temp_g(boundary)=1;
+        G=temp_g(:)';
+        
+
+        Dw=Dn/2;
+        a1=1-6*Dw*tau*k/(L^2*h^2);
+        a2=Dw*tau*k/(L^2*h^2)-tau*k*u0/L*ux(2:N-1,2:N-1,2:N1-1)/(2*h);
+        a3=Dw*tau*k/(L^2*h^2)-tau*k*u0/L*uy(2:N-1,2:N-1,2:N1-1)/(2*h);
+        a4=Dw*tau*k/(L^2*h^2)-tau*k*u0/L*uz(2:N-1,2:N-1,2:N1-1)/(2*h);
+        a5=Dw*tau*k/(L^2*h^2)+tau*k*u0/L*ux(2:N-1,2:N-1,2:N1-1)/(2*h);
+        a6=Dw*tau*k/(L^2*h^2)+tau*k*u0/L*uy(2:N-1,2:N-1,2:N1-1)/(2*h);
+        a7=Dw*tau*k/(L^2*h^2)+tau*k*u0/L*uz(2:N-1,2:N-1,2:N1-1)/(2*h);
+        
+        w_new=w;
+        w_new(find(w_new<1))=1;
+        
+        act=3.67*gl./(gl+1).*(n./(n+1)+1e-12).*exp(-(w_new-1).^4/0.2);  %Werberg effect added
+        act(act<0)=0;
+        
+        rho_w = rho_w0*act(2:N-1,2:N-1,2:N1-1);
+        
+  
+        
+        Diaad = 0.387; 
+        sd = Diaad/Dp;
+        sigmaD = (1-(1-sd).^2).^2;   
+        
+        Delta_P = (plum-p-sigmaT.*(pb-pI));
+
+        Pvp=0.915e-9/10e-6;
+        Fv = LPP.*SV.*Delta_P;
+
+        Pev = LPP.*Delta_P.*(1-sigmaD)./(Pvp);
+
+        
+        lambda_w = Fv.*(1-sigmaD)*w0.*0.05 + Pvp*w0.*(0.05-w).* Pev./((exp(Pev)-1)+1e-18);
+        lambda_wf = k*tau/w0*lambda_w(2:N-1,2:N-1,2:N1-1).*v(2:N-1,2:N-1,2:N1-1);
+        
+        rho_wf = k*tau/w0*rho_w.*c(2:N-1,2:N-1,2:N1-1);
+        
+        
+        
+        
+        
+        w(2:N-1,2:N-1,2:N1-1) = a1.*w(2:N-1,2:N-1,2:N1-1) + a2.*w(3:N,2:N-1,2:N1-1) + a3.*w(2:N-1,3:N,2:N1-1) ...
+            + a4.*w(2:N-1,2:N-1,3:N1) + a5.*w(1:N-2,2:N-1,2:N1-1) + a6.*w(2:N-1,1:N-2,2:N1-1) ...
+            + a7.*w(2:N-1,2:N-1,1:N1-2) ...
+            + rho_wf + lambda_wf;
+        
+        w(w<0)=0;
+        
+        temp_w=w;
+        temp_w(boundary)=1;
+        waste=temp_w(:)';
+       
+        lam = 1.7e-8;  
+        muT_mm0 = 1.7e-10; 
+        muE_mm0 = 0.3e-10; 
+        Dmm=1e-13; 
+        
+        mm1=1-6*Dmm*tau*k/(L^2*h^2)-lam*tau*k;
+        mm2=Dmm*tau*k/(L^2*h^2)-tau*k*u0/L*ux(2:N-1,2:N-1,2:N1-1)/(2*h);
+        mm3=Dmm*tau*k/(L^2*h^2)-tau*k*u0/L*uy(2:N-1,2:N-1,2:N1-1)/(2*h);
+        mm4=Dmm*tau*k/(L^2*h^2)-tau*k*u0/L*uz(2:N-1,2:N-1,2:N1-1)/(2*h);
+        mm5=Dmm*tau*k/(L^2*h^2)+tau*k*u0/L*ux(2:N-1,2:N-1,2:N1-1)/(2*h);
+        mm6=Dmm*tau*k/(L^2*h^2)+tau*k*u0/L*uy(2:N-1,2:N-1,2:N1-1)/(2*h);
+        mm7=Dmm*tau*k/(L^2*h^2)+tau*k*u0/L*uz(2:N-1,2:N-1,2:N1-1)/(2*h);
+        
+        vtip = v;
+        vtip((vtip==1))=0; 
+        
+        muT_mm = muT_mm0*act(2:N-1,2:N-1,2:N1-1);
+        muE_mm = muE_mm0;
+        
+        muT_mmf = k*tau/mm0*muT_mm.*c(2:N-1,2:N-1,2:N1-1);
+        muE_mmf = k*tau/mm0*muE_mm.*v(2:N-1,2:N-1,2:N1-1);  
+        
+        Diaad = 4; 
+        sd = Diaad/Dp;
+        sigmaD = (1-(1-sd).^2).^2;   
+        
+        Delta_P = (plum-p-sigmaT.*(pb-pI));
+
+        Fv = LPP.*SV.*Delta_P;
+        Pev = LPP.*Delta_P.*(1-sigmaD)./(Pvp/50);
+        
+        lambda_mm = Fv.*(1-sigmaD)*mm0.*0 + (Pvp/50).*SV*mm0.*(0-mm).* Pev./((exp(Pev)-1)+1e-18);
+        lambda_mf = k*tau/mm0*lambda_mm(2:N-1,2:N-1,2:N1-1).*v(2:N-1,2:N-1,2:N1-1);
+        
+        mm(2:N-1,2:N-1,2:N1-1) = mm1.*mm(2:N-1,2:N-1,2:N1-1) + mm2.*mm(3:N,2:N-1,2:N1-1) + mm3.*mm(2:N-1,3:N,2:N1-1) ...
+            + mm4.*mm(2:N-1,2:N-1,3:N1) + mm5.*mm(1:N-2,2:N-1,2:N1-1) + mm6.*mm(2:N-1,1:N-2,2:N1-1) ...
+            + mm7.*mm(2:N-1,2:N-1,1:N1-2) ...
+            + muT_mmf + muE_mmf+lambda_mf;
+        
+        mm(mm<0)=0;
+        
+        temp_mm=mm;
+        temp_mm(boundary)=0;
+        mmp=temp_mm(:)';
+        
+
+
+        
+        gam= 1.3e-7;  
+        ff1=1-gam*k*tau.*mm(2:N-1,2:N-1,2:N1-1);
+        
+        f(2:N-1,2:N-1,2:N1-1) = ff1.*f(2:N-1,2:N-1,2:N1-1);
+        
+        f(f<0)=0;
+        
+        temp_f=f;
+        temp_f(boundary)=1;
+        fib=temp_f(:)';
+        
+        Da1=0;
+        ag1=1-6*Da1*tau*k/(L^2*h^2)-k*tau.*(del_1+r0a(2:N-1,2:N-1,2:N1-1)*c0*k1);
+        ag2=Da1*tau*k/(L^2*h^2)-tau*k*u0/L*ux(2:N-1,2:N-1,2:N1-1)/(2*h);
+        ag3=Da1*tau*k/(L^2*h^2)-tau*k*u0/L*uy(2:N-1,2:N-1,2:N1-1)/(2*h);
+        ag4=Da1*tau*k/(L^2*h^2)-tau*k*u0/L*uz(2:N-1,2:N-1,2:N1-1)/(2*h);
+        ag5=Da1*tau*k/(L^2*h^2)+tau*k*u0/L*ux(2:N-1,2:N-1,2:N1-1)/(2*h);
+        ag6=Da1*tau*k/(L^2*h^2)+tau*k*u0/L*uy(2:N-1,2:N-1,2:N1-1)/(2*h);
+        ag7=Da1*tau*k/(L^2*h^2)+tau*k*u0/L*uz(2:N-1,2:N-1,2:N1-1)/(2*h);
+        
+        rho_a1 = k*tau/c0*(al_1.*v(2:N-1,2:N-1,2:N1-1).*(e0-(ang1(2:N-1,2:N-1,2:N1-1).*c0).^2/Ka)...
+            +k_1.*r1a(2:N-1,2:N-1,2:N1-1)*c0);
+        
+        
+        Diaad = 4; 
+        sd = Diaad/Dp;
+        sigmaD = (1-(1-sd).^2).^2;   
+        
+        Delta_P = (plum-p-sigmaT.*(pb-pI));
+
+        Pvp=1.5e-1*2e-9/10e-6;
+        Fv = LPP.*SV.*Delta_P;
+        Pev = LPP.*Delta_P.*(1-sigmaD)./(Pvp);
+        
+        
+
+        lambda_ang1 = Fv.*(1-sigmaD)*c0.*0 + (Pvp)*c0.*(0-ang1).* Pev./((exp(Pev)-1)+1e-18);
+        lambda_ang1f = k*tau/c0*lambda_ang1(2:N-1,2:N-1,2:N1-1).*v(2:N-1,2:N-1,2:N1-1);
+        
+        ang1(2:N-1,2:N-1,2:N1-1) = ag1.*ang1(2:N-1,2:N-1,2:N1-1) + ag2.*ang1(3:N,2:N-1,2:N1-1) + ag3.*ang1(2:N-1,3:N,2:N1-1) ...
+            + ag4.*ang1(2:N-1,2:N-1,3:N1) + ag5.*ang1(1:N-2,2:N-1,2:N1-1) + ag6.*ang1(2:N-1,1:N-2,2:N1-1) ...
+            + ag7.*ang1(2:N-1,2:N-1,1:N1-2) + rho_a1+lambda_ang1f;
+        
+        ang1(ang1<0)=0;
+        
+        ang1(boundary)=0;
+        Ang1=ang1(:);
+        
+       
+        h0 = 1e-6; 
+        ba2 = 1.3889e-5; 
+        c_hypoxia = c;
+
+
+        c_hypoxia(act>0.2)=0;
+        c_hypoxia(act<0.2)=1;
+        c_hypoxia(c==nec)=0;
+        Da2=1e-13;
+        agg1=1-6*Da2*tau*k/(L^2*h^2)-k*tau.*(del_2+r0a(2:N-1,2:N-1,2:N1-1)*c0*k2);
+        agg2=Da2*tau*k/(L^2*h^2)-tau*k*u0/L*ux(2:N-1,2:N-1,2:N1-1)/(2*h);
+        agg3=Da2*tau*k/(L^2*h^2)-tau*k*u0/L*uy(2:N-1,2:N-1,2:N1-1)/(2*h);
+        agg4=Da2*tau*k/(L^2*h^2)-tau*k*u0/L*uz(2:N-1,2:N-1,2:N1-1)/(2*h);
+        agg5=Da2*tau*k/(L^2*h^2)+tau*k*u0/L*ux(2:N-1,2:N-1,2:N1-1)/(2*h);
+        agg6=Da2*tau*k/(L^2*h^2)+tau*k*u0/L*uy(2:N-1,2:N-1,2:N1-1)/(2*h);
+        agg7=Da2*tau*k/(L^2*h^2)+tau*k*u0/L*uz(2:N-1,2:N-1,2:N1-1)/(2*h);
+        
+        rho_a2 = k*tau/c0*(al_2.*v(2:N-1,2:N-1,2:N1-1).*c(2:N-1,2:N-1,2:N1-1).*(e0-(ang2(2:N-1,2:N-1,2:N1-1).*c0).^2/Ka)...
+            +k_2.*r2a(2:N-1,2:N-1,2:N1-1)*c0+...
+            ba2.*c_hypoxia(2:N-1,2:N-1,2:N1-1).*(h0-(ang2(2:N-1,2:N-1,2:N1-1).*c0).^2/Ka));
+        
+        Diaad = 4; 
+        sd = Diaad/Dp;
+        sigmaD = (1-(1-sd).^2).^2;   
+        
+        Delta_P = (plum-p-sigmaT.*(pb-pI));
+
+        Pvp=1.5e-1*2e-9/10e-6;
+        Fv = LPP.*SV.*Delta_P;
+        Pev = LPP.*Delta_P.*(1-sigmaD)./(Pvp);
+        
+        
+
+        lambda_ang2 = Fv.*(1-sigmaD)*c0.*0 + (Pvp)*c0.*(0-ang2).* Pev./((exp(Pev)-1)+1e-18);
+        lambda_ang2f = k*tau/c0*lambda_ang2(2:N-1,2:N-1,2:N1-1).*v(2:N-1,2:N-1,2:N1-1);
+        
+        
+        ang2(2:N-1,2:N-1,2:N1-1) = agg1.*ang2(2:N-1,2:N-1,2:N1-1) + agg2.*ang2(3:N,2:N-1,2:N1-1) + agg3.*ang2(2:N-1,3:N,2:N1-1) ...
+            + agg4.*ang2(2:N-1,2:N-1,3:N1) + agg5.*ang2(1:N-2,2:N-1,2:N1-1) + agg6.*ang2(2:N-1,1:N-2,2:N1-1) ...
+            + agg7.*ang2(2:N-1,2:N-1,1:N1-2) + rho_a2+lambda_ang2f;
+        
+        ang2(ang2<0)=0;
+        
+        ang2(boundary)=0;
+        Ang2=ang2(:);
+
+
+        ra01=1-k*tau.*(ang1(2:N-1,2:N-1,2:N1-1)*c0*k1+ang2(2:N-1,2:N-1,2:N1-1)*c0*k2);
+        
+        rho_ra02 = k*tau/c0*(k_1.*r1a(2:N-1,2:N-1,2:N1-1)*c0+k_2.*r2a(2:N-1,2:N-1,2:N1-1)*c0);
+        
+        r0a(2:N-1,2:N-1,2:N1-1) = ra01.*r0a(2:N-1,2:N-1,2:N1-1)+ rho_ra02;
+        
+        r0a(v==0.95)=(alpph-a0)/c0;
+        
+        r0a(r0a<0)=0;
+        
+        r0a(boundary)=0;
+        ra0=r0a(:);
+        
+
+
+        ra11=1-k*tau.*k_1;
+        
+        rho_ra12 = k*tau*c0*(ang1(2:N-1,2:N-1,2:N1-1).*r0a(2:N-1,2:N-1,2:N1-1)*k1);
+        
+        r1a(2:N-1,2:N-1,2:N1-1) = ra11.*r1a(2:N-1,2:N-1,2:N1-1)+ rho_ra12;
+        
+        r1a(r1a<0)=0;
+        
+        r1a(boundary)=0;
+        ra1=r1a(:);
+
+
+        ra21=1-k*tau.*k_2;
+        
+        rho_ra22 = k*tau*c0*(ang2(2:N-1,2:N-1,2:N1-1).*r0a(2:N-1,2:N-1,2:N1-1)*k2);
+        
+        r2a(2:N-1,2:N-1,2:N1-1) = ra21.*r2a(2:N-1,2:N-1,2:N1-1)+ rho_ra22;
+        
+        r2a(r2a<0)=0;
+        
+        r2a(boundary)=0;
+        ra2=r2a(:);
+        
+        rv01=1-k*tau.*k0.*t(2:N-1,2:N-1,2:N1-1)*c0;
+        
+        rho_rv0 = k*tau*(rvv(2:N-1,2:N-1,2:N1-1)*k_0);
+        
+        r0v(2:N-1,2:N-1,2:N1-1) = rv01.*r0v(2:N-1,2:N-1,2:N1-1)+ rho_rv0;
+        
+        r0v(r0v<0)=0;
+        
+
+        r0v(v==0.95)=a0/c0;
+        r0v(boundary)=0;
+        
+        rv0=r0v(:);
+        rv0(rv0<0)=0;
+        
+
+
+        rv1=1-k*tau.*k_0;
+        
+        rho_rv = k*tau*c0*(k0.*t(2:N-1,2:N-1,2:N1-1).*r0v(2:N-1,2:N-1,2:N1-1));
+        
+        rvv(2:N-1,2:N-1,2:N1-1) = rv1.*rvv(2:N-1,2:N-1,2:N1-1)+ rho_rv;
+        
+        rvv(rvv<0)=0;
+        
+        rvv(boundary)=0;
+        rv=rvv(:);
+        rv(rv<0)=0;
+
+
+        Dc=1.5e-13;
+        s1=1-6*Dc*tau*k/(L^2*h^2)-tau*k*(k0.*r0v(2:N-1,2:N-1,2:N1-1)*c0+mu0);
+        s2=Dc*tau*k/(L^2*h^2)-tau*k*u0/L*ux(2:N-1,2:N-1,2:N1-1)/(2*h);
+        s3=Dc*tau*k/(L^2*h^2)-tau*k*u0/L*uy(2:N-1,2:N-1,2:N1-1)/(2*h);
+        s4=Dc*tau*k/(L^2*h^2)-tau*k*u0/L*uz(2:N-1,2:N-1,2:N1-1)/(2*h);
+        s5=Dc*tau*k/(L^2*h^2)+tau*k*u0/L*ux(2:N-1,2:N-1,2:N1-1)/(2*h);
+        s6=Dc*tau*k/(L^2*h^2)+tau*k*u0/L*uy(2:N-1,2:N-1,2:N1-1)/(2*h);
+        s7=Dc*tau*k/(L^2*h^2)+tau*k*u0/L*uz(2:N-1,2:N-1,2:N1-1)/(2*h);
+        
+        n_new=n(2:N-1,2:N-1,2:N1-1);  n_new((n_new>1))=1;
+        
+        rho_c = rho_c0*(1-n_new);
+
+        
+        
+        rho_cf = k*tau/c0*(rho_c.*c(2:N-1,2:N-1,2:N1-1)+rvv(2:N-1,2:N-1,2:N1-1)*c0*k_0);
+
+
+        
+        Diaad = 5.2; 
+        sd = Diaad/Dp;
+        sigmaD = (1-(1-sd).^2).^2;   
+        
+        Delta_P = (plum-p-sigmaT.*(pb-pI));
+
+        Pvp=1.5e-1*2e-9/10e-6;
+        Fv = LPP.*SV.*Delta_P;
+        Pev = LPP.*Delta_P.*(1-sigmaD)./(Pvp);
+        
+        
+
+        lambda_c = Fv.*(1-sigmaD)*c0.*0 + (Pvp)*c0.*(0-t).* Pev./((exp(Pev)-1)+1e-18);
+        lambda_cf = k*tau/c0*lambda_c(2:N-1,2:N-1,2:N1-1).*v(2:N-1,2:N-1,2:N1-1);
+        
+        
+        t(2:N-1,2:N-1,2:N1-1) = s1.*t(2:N-1,2:N-1,2:N1-1) + s2.*t(3:N,2:N-1,2:N1-1) + s3.*t(2:N-1,3:N,2:N1-1) ...
+            + s4.*t(2:N-1,2:N-1,3:N1) + s5.*t(1:N-2,2:N-1,2:N1-1) + s6.*t(2:N-1,1:N-2,2:N1-1) ...
+            + s7.*t(2:N-1,2:N-1,1:N1-2) + rho_cf + lambda_cf- 2*lambda_ad1f*d0/c0*2;
+        
+        t(t<0)=0;
+
+        t(boundary)=0;
+        
+        TAF=t(:);
+        activity=act(:)';
+        
+        
+        LPP_N = 3.6e-10/5;
+        
+        LPP(v>0)=LPP_N.*(1+6.*t(v>0)./(t(v>0)+15).*(1+(ang2(v>0)./(ang1(v>0)+1e-18))./(ang2(v>0)./(ang1(v>0)+1e-18)+1)));
+        
+        LP=LPP(:)';
+        
+        
+        pI(cindex) = 2e3*0.0075; 
+        sigmaT(cindex)=8.7e-5;
+        SV(cindex) = 2e4;
+        
+        
+        
+        Dp = (LPP_N/mean(LPP(c>=0.95))).^(1/6).*400.*ones(N,N,N1);   %for normal tissue  with Kozeny-Carman relation
+        
+        Dp((c>0)) = 400;   
+        
+        Diaad = 128.8; 
+
+        sd = Diaad/Dp;
+        sigmaD = (1-(1-sd).^2).^2;   
+        
+        v_age((v_age==0))=1e-8;  
+        
+        
+        
+        
+        plum=reshape(p_lum,N,N,N1);
+        
+        Delta_Pg = (plum-p*2-sigmaT.*(pb-pI));
+
+        Delta_Pg((Delta_Pg<=0)) = 0;  
+        
+        Pvp = 7.5e-2*2e-9/10e-6;
+        Fv = LPP.*SV.*Delta_Pg;
+        Pev = LPP.*Delta_Pg.*(1-sigmaD)./Pvp;
+        Pev(Pev==0)=1e-10;
+        
+		
+        
+        Dad=7.5e-2*Dn;
+        r1 = 1-6*Dad*tau*k/(L^2*h^2);
+        r2 = Dad*tau*k/(L^2*h^2)-tau*k*u0/L*ux(2:N-1,2:N-1,2:N1-1)/(2*h);
+        r3 = Dad*tau*k/(L^2*h^2)-tau*k*u0/L*uy(2:N-1,2:N-1,2:N1-1)/(2*h);
+        r4 = Dad*tau*k/(L^2*h^2)-tau*k*u0/L*uz(2:N-1,2:N-1,2:N1-1)/(2*h);
+        r5 = Dad*tau*k/(L^2*h^2)+tau*k*u0/L*ux(2:N-1,2:N-1,2:N1-1)/(2*h);
+        r6 = Dad*tau*k/(L^2*h^2)+tau*k*u0/L*uy(2:N-1,2:N-1,2:N1-1)/(2*h);
+        r7 = Dad*tau*k/(L^2*h^2)+tau*k*u0/L*uz(2:N-1,2:N-1,2:N1-1)/(2*h);
+        
+        
+        lambda_ad0 = 92e-3*1000;  
+        
+        
+        Cd=zeros(N,N,N1);
+        Cd(vess_tag>0)=1.*exp(-(iteration-startdrug)/(20*11));
+        scad=Cd;
+        scad=(scad-tau*k/d0.*(Fv.*(1-sigmaD)*d0.*scad + Pvp.*d0.*(scad-ad).* Pev./((exp(Pev)-1))));    % Blood drug concentration single dose
+        sumscad=sum(scad(vess_tag>0).*vdiam(vess_tag>0).^2)/length(find(vess_tag>0))/(mean(vdiam(vess_tag>0))).^2;
+        
+        Cd(celltype>0)=1.5*sumscad;
+        
+        rho_ad = Fv.*(1-sigmaD)*d0.*Cd + Pvp*d0.*(Cd-ad).* Pev./((exp(Pev)-1));
+        
+        
+        lambda_ad1 = lambda_ad0*t(2:N-1,2:N-1,2:N1-1)*c0.*ad(2:N-1,2:N-1,2:N1-1)*d0;
+        lambda_ad2 = lambda_decay*ad(2:N-1,2:N-1,2:N1-1)*d0;
+        
+        rho_adf = k*tau/d0*rho_ad(2:N-1,2:N-1,2:N1-1).*v(2:N-1,2:N-1,2:N1-1);
+
+        lambda_ad1f = k*tau/d0*lambda_ad1;                    
+        lambda_ad2f = k*tau/d0*lambda_ad2;
+        
+        ad(2:N-1,2:N-1,2:N1-1)= r1.*ad(2:N-1,2:N-1,2:N1-1) + r2.*ad(3:N,2:N-1,2:N1-1) + r3.*ad(2:N-1,3:N,2:N1-1) ...
+            + r4.*ad(2:N-1,2:N-1,3:N1) + r5.*ad(1:N-2,2:N-1,2:N1-1) + r6.*ad(2:N-1,1:N-2,2:N1-1) ...
+            + r7.*ad(2:N-1,2:N-1,1:N1-2) ...
+            + rho_adf ...
+            - lambda_ad1f ...
+            - lambda_ad2f;
+        
+        ad(ad<0)=0;
+        
+        ad(boundary)=1.*exp(-(iteration-startdrug)/(20*11));
+        adrug=ad(:)';
+        
+        Dp = (LPP_N/mean(LPP(c>=0.95))).^(1/6).*400.*ones(N,N,N1);   %for normal tissue  with Kozeny-Carman relation
+        
+        Dp((c>0)) = 400;   
+        
+        Diaad = 1.5; 
+
+
+        sd = Diaad./Dp;
+        sigmaD = (1-(1-sd).^2).^2;   
+        
+        
+        
+        Delta_Pc = (plum-p-sigmaT.*(pb-pI));
+
+        Delta_Pc(Delta_Pc<0)=0;
+        Pvp=.16*2e-9/10e-6;
+        Fv = LPP.*SV.*Delta_Pc;
+        Pev = LPP.*Delta_Pc.*(1-sigmaD)./(Pvp);
+        Pev(Pev==0)=1e-10;
+        
+        
+        Dd=.16*Dn;
+        r1 = 1-6*Dd*tau*k/(L^2*h^2);
+        r2 = Dd*tau*k/(L^2*h^2)-tau*k*u0/L*ux(2:N-1,2:N-1,2:N1-1)/(2*h);
+        r3 = Dd*tau*k/(L^2*h^2)-tau*k*u0/L*uy(2:N-1,2:N-1,2:N1-1)/(2*h);
+        r4 = Dd*tau*k/(L^2*h^2)-tau*k*u0/L*uz(2:N-1,2:N-1,2:N1-1)/(2*h);
+        r5 = Dd*tau*k/(L^2*h^2)+tau*k*u0/L*ux(2:N-1,2:N-1,2:N1-1)/(2*h);
+        r6 = Dd*tau*k/(L^2*h^2)+tau*k*u0/L*uy(2:N-1,2:N-1,2:N1-1)/(2*h);
+        r7 = Dd*tau*k/(L^2*h^2)+tau*k*u0/L*uz(2:N-1,2:N-1,2:N1-1)/(2*h);
+        
+        
+        
+        Cd=zeros(N,N,N1);
+        Cd(vess_tag>0)=5.*exp(-(iteration-(startdrug+14*11*(floor((iteration-startdrug)/(14*11)))))/0.3306);
+        scd=Cd;
+        scd=(scd-tau*k/d0.*(Fv.*(1-sigmaD)*d0.*Cd + Pvp.*d0.*(Cd-d).* Pev./((exp(Pev)-1))));    % Blood drug concentration single dose
+        sumscd=sum(scd(vess_tag>0).*vdiam(vess_tag>0).^2)/length(find(vess_tag>0))/(mean(vdiam(vess_tag>0))).^2;
+        
+        Cd(celltype>0)=1.5*sumscd;
+        
+        rho_d = Fv.*(1-sigmaD)*d0.*Cd + Pvp*d0.*(Cd-d).* Pev./((exp(Pev)-1));
+        
+        
+        
+        lambda_d1 = lambda_d0*act(2:N-1,2:N-1,2:N1-1);
+        lambda_d2 = lambda_decay*d(2:N-1,2:N-1,2:N1-1)*d0;
+        
+        rho_df = k*tau/d0*rho_d(2:N-1,2:N-1,2:N1-1).*v(2:N-1,2:N-1,2:N1-1);
+        lambda_d1f = k*tau/d0*lambda_d1.*c(2:N-1,2:N-1,2:N1-1).*d(2:N-1,2:N-1,2:N1-1)*d0;
+        lambda_d2f = k*tau/d0*lambda_d2;%.*c_new;
+        
+        d(2:N-1,2:N-1,2:N1-1)= r1.*d(2:N-1,2:N-1,2:N1-1) + r2.*d(3:N,2:N-1,2:N1-1) + r3.*d(2:N-1,3:N,2:N1-1) ...
+            + r4.*d(2:N-1,2:N-1,3:N1) + r5.*d(1:N-2,2:N-1,2:N1-1) + r6.*d(2:N-1,1:N-2,2:N1-1) ...
+            + r7.*d(2:N-1,2:N-1,1:N1-2) ...
+            + rho_df ...
+            - lambda_d1f ...
+            - lambda_d2f;
+        
+        d(d<0)=0;
+        d(boundary)=5.*exp(-(iteration-(startdrug+14*11*(floor((iteration-startdrug)/(14*11)))))/0.3306);
+        drug=d(:)';
+        CDin = Cd(:)';
+        
+    end
+    
+    
+    cellindex=find(celltype>nec);                         
+    test_act=activity(cellindex);
+    test_cell_energy=cell_energy(cellindex);
+    celltype(cellindex((test_act*1>=0.5)))=1;      
+    celltype(cellindex(test_act*1<0.5))=0.95;          
+    celltype(cellindex((test_cell_energy<=0)))=nec;
+    
+    div_index=find(celltype==0.95);
+    div_index=div_index(randperm(length(div_index)));
+    
+    kill=22;
+    
+    for ss=1:length(div_index)
+        s=div_index(ss);
+        cell_energy(s)=cell_energy(s)- 0.2;
+    end
+    
+    div_index=find(celltype==1);
+    div_index=div_index(randperm(length(div_index)));
+    
+    for ss=1:length(div_index)
+        s=div_index(ss);
+        prolif_energy=26; 
+        
+        if cell_energy(s)>=prolif_energy
+            cellLocation(s);
+        else
+            cell_energy(s) = cell_energy(s) + 1.2*activity(s) - 0.85*activity(s)./(1*activity(s)+1) ...
+                - drug(s)*activity(s)./(activity(s)+1)*kill;
+        end
+    end
+    
+    
+    startime=1;
+    
+    if iteration>=startime
+        
+        
+        angiocon=angiocon+1+startdrug;
+        if angiocon==1 || isempty(vindexsave)
+            startang=iteration;
+            dd=1;
+            tet(1)=0;
+            X1(dd)=40*cos(tet(dd)*pi/180)+(N+1)/2;
+            Y1(dd)=40*sin(tet(dd)*pi/180)+(N+1)/2;
+            while tet<=360
+                dd=dd+1;
+                tet(dd)=tet(dd-1)+(1+rand(1))/90*480*1.8;
+                X1(dd)=40*cos(tet(dd)*pi/180)+(N+1)/2;
+                Y1(dd)=40*sin(tet(dd)*pi/180)+(N+1)/2;
+            end
+            
+            Z1 = repmat((N1+1)/2,1,length(tet));
+            
+            
+            
+            vindex = zeros(size(X1));
+            
+            for i = 1:length(X1)
+                xx = round(X1(i)/20/0.05);
+                yy = round(Y1(i)/20/0.05);
+                zz = round(Z1(i)/20/0.05);
+                
+                vindex(i) = xx+yy*N+zz*slen;
+            end
+            
+            vindexsave = vindex;
+            %                     old_vindexsave = vindex;
+            
+            hold on
+            scatter3(threedLattice(vindex,1)*20,threedLattice(vindex,2)*20,threedLattice(vindex,3)*20,'g*');
+            
+            for j = 1:length(vindex)
+                s = vindex(j);
+                vess{s}.count   = 0;
+                vess{s}.pare    = [];
+                vess{s}.son     = [];
+                vess{s}.direct  = 0;
+                vess{s}.opdirect= 0;
+                vess{s}.opdirect2= 0;
+                vess{s}.tag1= 0;
+            end
+            
+            vess_tag(vindex) = 0.95;
+            vess_age(vindex) = 1;
+            
+            LPP_N = 3.6e-10/5;
+            LPP(v>0)=LPP_N.*(1+6.*t(v>0)./(t(v>0)+15).*(1+(ang2(v>0)./(ang1(v>0)+1e-18))./(ang2(v>0)./(ang1(v>0)+1e-18)+1)));
+            
+            LP=LPP(:)';
+            
+        end
+        
+        
+        
+        p_lum (vindexsave) = 40*length(find(celltype>0))/(length(find(celltype>0))+200);
+        
+        WSS(vindexsave)=ta_ref*0.0007500637554192; 
+
+        
+        u_lum(vindexsave)=Q_ref*4/pi./((vess_D(vindexsave)*tab_D).^2+1e-8);
+        
+        vessgrowth_flag=1;
+        start=startime;
+        
+
+        g=zeros(1,wlen);
+        NN=zeros(1,wlen);
+        NN((vess_tag>0.95))=Ang1((vess_tag>0.95))./(Ang2((vess_tag>0.95))+1e-10);
+        MM=zeros(1,wlen);
+        MM((vess_tag>0.95))=Ang2((vess_tag>0.95))./(Ang1((vess_tag>0.95))+1e-10);
+        g((vess_tag>0.95)) = TAF((vess_tag>0.95))';
+        
+        
+    
+        vess_age((vess_tag>0.95))=vess_age((vess_tag>0.95))+5*tau*k.*(8*al_y.*(g((vess_tag>0.95))./(tet_r+g(find(vess_tag>0.95)))).*(1-1.*CDin(find(vess_tag>0.95))./(0.000065/2.13+CDin(find(vess_tag>0.95))))...
+            +(20/(5*tau*k).*(WSS((vess_tag>0.95))-ta_ref*.00075).*heaviside(-TAF((vess_tag>0.95))'+c0*10000 )).*(1-1.*CDin(find(vess_tag>0.95))./(0.000065/2.13+CDin(find(vess_tag>0.95))))...
+            -del_y*5.*(1-(g((vess_tag>0.95))./(tet_y+g((vess_tag>0.95))))));
+        
+
+        
+        tip_index=union(find(vess_tag==0.95),sprout_index);    
+        tip_index=tip_index(randperm(length(tip_index)));      
+        
+        
+        
+        for i=1:length(tip_index)
+            s=tip_index(i);
+            if rand(1)<(0.5*CDin(s)/(0.000065/2.13+CDin(s)))
+                kiltip = kiltip+1;
+                vess_tag(s) = 0;
+                
+            end
+        end
+        
+        
+ 
+
+        
+        vess_age(vess_age<=0)=1;
+        vess_age = vess_age.*vess_tag;
+        
+      
+        
+        tip_index=union(find(vess_tag==0.95),sprout_index);
+        tip_index=tip_index(randperm(length(tip_index)));  
+        
+        for i=1:length(tip_index)
+            
+            s=tip_index(i);
+            if v_velo(s)>sqrt(3)*L*h
+                numm = ceil(v_velo(s)/(sqrt(3)*L*h))
+                s_rep(s) = s;
+                for re=1:numm
+                    vascularization(s_rep(s),startime)
+                end
+            else
+                vascularization(s,startime)
+            end
+            
+        end
+        
+        for i=1:length(tip_index)
+            s=tip_index(i);
+            
+            vascularization(s,startang)
+        end
+        
+        for i=1:length(tip_index)            
+            s=tip_index(i);
+            if(TAF(s)~=0)
+                vascularization(s,startang)
+                
+            elseif (TAF(s)==0)
+                
+                vess_tag(s) = 0;
+            end
+        end
+        
+        
+        
+        
+        
+        p_lum(p_lum<0)=0;
+        
+        
+        
+        
+        tissuindex = find(vess_tag==0);
+        tissuindex = setdiff(tissuindex,boundary);
+        
+        stalk_index = find(vess_tag==1);
+        stalk_index = setdiff(stalk_index,vindexsave);
+        
+
+        
+        for ttt = 1:length(tissuindex)
+            sss=tissuindex(ttt);
+            p_ins(sss)=(p_ins(sss+1)+p_ins(sss-1)+p_ins(sss+N)+p_ins(sss-N)+p_ins(sss+(slen))+p_ins(sss-(slen)))./6;
+           
+        end
+        
+
+        
+        
+        err=1;
+        tol=1e-3;
+        p_ins1= p_ins;
+        cindex=find(celltype>0);
+        
+        if ~isempty(((c.*v)~=0))
+            while err>tol
+                
+                for ttt = 1:length(cindex)
+                    sss=cindex(ttt);
+                    p_ins(sss)=(p_ins1(sss+1)+p_ins1(sss-1)+p_ins1(sss+N)+p_ins1(sss-N)+p_ins1(sss+(slen))+p_ins1(sss-(slen)))./6;
+
+                end
+                                
+                err= sqrt(sum(sum((p_ins1(cindex)-p_ins(cindex)).^2)));
+                
+                p_ins1=p_ins;
+            end
+            
+            p_ins(cindex)=max(p_ins(cindex));
+        end
+        
+        
+        
+        if ~isempty(stalk_index)
+
+            p_lum_new = p_lum;
+            p_ins_new = p_ins;
+            for ii=1:length(stalk_index)
+                s=stalk_index(ii);
+                if vess{s}.opdirect~=0
+                    plum_correct(s)
+                end
+            end
+            p_lum = p_lum_new;
+            p_ins = p_ins_new;
+        end
+        
+
+        go=0;
+ 
+    end
+    
+    
+    
+    
+end
+totaltime=toc;
+totaltime=totaltime/3600
+
+
+
+
+
+
+
+function vascularization(s,startime)
+
+
+global slen vess pres celltype sstt  vess_tag checkgro vess_age branch_tag hotpoint index_bias branchrecord sprout_index vess_D mu_blood  len N p_lum u_lum p_ins acunt s_rep ra0  LP  con1
+acunt = 0;
+alpph = 1e-7;
+a0 = 5e-9;
+c0      = 4.3e-4;
+
+if vess{s}.count>=(10*((1/10)^(1/30)).^(p_lum(s-vess{s}.direct)-pres(s)/100)) %corrected
+    p0 =60;
+    gro1 = 1;
+    gro=direction(s,index_bias,gro1);
+    
+    if ~isempty(gro)
+        
+        con1=con1+1;
+        
+        sstt=sstt+1;
+        tab_D=50e-6;
+        L           = 1e-2;
+        k           = 1/(len*(N-1));
+        h           = 1/(N-1);
+        sigma = 0.91*1e-2;
+        pb = 2.67e3*0.0075;
+        pI = 1.33e3*0.0075;
+        LPP_N = 3.6e-10;
+        LPP = LPP_N;
+        LPP_T = 28e-10;
+        KP = 9e-15*4;
+        SV = 7e3;
+        
+        
+        if celltype(s)>1e-4
+            
+            
+            pI = 2e3*0.0075;
+            sigma=8.7e-5;
+            SV = 2e4;
+            KP = 9e-15*(1-1.5*pres(s)/(p0+pres(s)));
+            
+        end
+        
+        SV=SV.*vess_D(s)/2;
+        
+        
+        
+        if vess_tag(s)==1
+            
+            vess{s}.son=s+index_bias(gro);
+            vess_tag(s+index_bias(gro))=0.95;
+            
+            if vess_age(s) > 1
+                vess_age(s+index_bias(gro))=1;
+            else
+                vess_age(s+index_bias(gro)) = vess_age(s)/2;
+            end
+            vess{s+index_bias(gro)}.count=0;
+            vess{s+index_bias(gro)}.pare=s;
+            vess{s+index_bias(gro)}.son=[];
+            vess{s+index_bias(gro)}.direct=index_bias(gro);
+            vess{s}.opdirect2=index_bias(gro);
+            vess{s}.tag1=1;
+            branch_tag(s)=1;
+            
+            branchrecord(s)=1;
+            
+            sprout_index=setdiff(sprout_index,s);
+            
+            if sstt>1 && vess{s}.direct~=0 && vess{s}.opdirect~=0
+                
+                if abs(vess{s}.opdirect)== 1 || abs(vess{s}.opdirect)==N || abs(vess{s}.opdirect)==(slen)
+                    leng1 = 1*L*h;
+                elseif abs(vess{s}.opdirect)==(slen+N-1) || abs(vess{s}.opdirect)==(slen+N+1) || abs(vess{s}.opdirect)==(slen-N+1) || abs(vess{s}.opdirect)==(slen-N-1)
+                    leng1 = sqrt(3)*L*h;
+                else
+                    leng1 = sqrt(2)*L*h;
+                end
+                
+                if gro== 5 || gro==11 || gro==13 || gro==15 || gro==17 || gro==23
+                    leng2 = 1*L*h;
+                elseif gro== 1 || gro==3 || gro==7 || gro==9 || gro==19 || gro==21 || gro==25 || gro==27
+                    leng2 = sqrt(3)*L*h;
+                else
+                    leng2 = sqrt(2)*L*h;
+                end
+                
+                
+                if abs(vess{s}.direct)== 1 || abs(vess{s}.direct)==N || abs(vess{s}.direct)==(slen)
+                    lengo = 1*L*h;
+                elseif abs(vess{s}.direct)== (slen+N-1) || abs(vess{s}.direct)==(slen+N+1) || abs(vess{s}.direct)==(slen-N+1) || abs(vess{s}.direct)==(slen-N-1)
+                    lengo = sqrt(3)*L*h;
+                else
+                    lengo = sqrt(2)*L*h;
+                end
+                
+                s_old = s-vess{s}.direct;
+                s_old2 = s+vess{s}.opdirect;
+                
+                p_lum(s)=((((vess_D(s)+vess_D(s_old))/2*tab_D).^4/128/mu_blood(s)/lengo-(vess_D(s)+vess_D(s_old))./2*tab_D/2.*lengo.*LP(s)).*p_lum(s_old)...
+                    +(vess_D(s)+vess_D(s_old))./2*tab_D.*lengo.*LP(s).*((p_ins(s)+p_ins(s_old))./2+sigma.*(pb-pI))+...
+                    (((vess_D(s)+vess_D(s_old2))./2*tab_D).^4/128/mu_blood(s)/leng1+(vess_D(s)+vess_D(s_old2))/2*tab_D/2.*leng1.*LP(s)).*p_lum(s_old2)...
+                    -(vess_D(s)+vess_D(s_old2))/2*tab_D.*leng1.*LP(s).*((p_ins(s)+p_ins(s_old2))/2+sigma.*(pb-pI))+ ...
+                    (((vess_D(s)+vess_D(s+index_bias(gro)))/2*tab_D).^4/128/mu_blood(s)/leng2+(vess_D(s)+vess_D(s+index_bias(gro)))/2*tab_D/2.*leng2.*LP(s)).*p_lum(s+index_bias(gro))...
+                    -(vess_D(s)+vess_D(s+index_bias(gro)))/2*tab_D.*leng2.*LP(s).*((p_ins(s)+p_ins(s+index_bias(gro)))/2+sigma.*(pb-pI)))/...
+                    ((((vess_D(s)+vess_D(s_old))/2*tab_D).^4/128/mu_blood(s)/lengo+(vess_D(s)+vess_D(s_old))/2*tab_D/2.*lengo*LP(s))+...
+                    (((vess_D(s)+vess_D(s_old2))/2*tab_D).^4/128/mu_blood(s)/leng1-(vess_D(s)+vess_D(s_old2))/2*tab_D/2.*leng1.*LP(s))+...
+                    (((vess_D(s)+vess_D(s+index_bias(gro)))/2*tab_D).^4/128/mu_blood(s)/leng2-(vess_D(s)+vess_D(s+index_bias(gro)))/2*tab_D/2.*leng2.*LP(s)));
+                
+                
+                p_ins(s)=(p_ins(s+1)+p_ins(s-1)+p_ins(s+N)+p_ins(s-N)+p_ins(s+(slen))+p_ins(s-(slen))+(h.*L)^2.*LP(s).*SV/KP.*(p_lum(s)-sigma.*(pb-pI)))/...
+                    (6+(h.*L)^2.*LP(s).*SV/KP);
+                
+                
+                ra0(s+index_bias(gro))=(alpph-a0)/c0;
+                
+            end
+        else if vess_tag(s)==0.95
+                
+                if hotpoint(s)==0
+                    disp('befor b ...')
+                    
+                    vess{s}.son=s+index_bias(gro);
+                    vess_tag(s)=1;
+                    vess_tag(s+index_bias(gro))=0.95;
+                    if vess_age(s) > 1
+                        vess_age(s+index_bias(gro))=1;
+                    else
+                        vess_age(s+index_bias(gro)) = vess_age(s)/2;
+                    end
+                    vess{s+index_bias(gro)}.count=0;
+                    vess{s+index_bias(gro)}.pare=s;
+                    vess{s+index_bias(gro)}.son=[];
+                    vess{s+index_bias(gro)}.direct=index_bias(gro);
+                    vess{s}.opdirect=index_bias(gro);
+                    vess{s}.opdirect2=0;
+                    vess{s}.tag1=0;
+                    s_rep(s) = s+index_bias(gro);
+                    
+                    checkgro(s) = gro;
+                    if sstt>1 && vess{s}.direct~=0
+                        
+                        if gro == 5 || gro==11 || gro ==13 || gro==15 || gro==17 || gro==23
+                            leng = 1*L*h;
+                        elseif gro == 1 || gro==3 || gro ==7 || gro==9 || gro==19 || gro==21 || gro==25 || gro==27
+                            leng = sqrt(3)*L*h;
+                        else
+                            leng = sqrt(2)*L*h;
+                        end
+                        
+                        if abs(vess{s}.direct)== 1 || abs(vess{s}.direct)==N || abs(vess{s}.direct)==(slen)
+                            lengo = 1*L*h;
+                        elseif abs(vess{s}.direct)== (slen+N-1) || abs(vess{s}.direct)==(slen+N+1) || abs(vess{s}.direct)==(slen-N+1) || abs(vess{s}.direct)==(slen-N-1)
+                            lengo = sqrt(3)*L*h;
+                        else
+                            lengo = sqrt(2)*L*h;
+                        end
+                        
+                        
+                        s_old=s-vess{s}.direct;
+                        
+                        
+                        p_lum(s)=((((vess_D(s)+vess_D(s_old))/2*tab_D).^4/128/mu_blood(s)/lengo-(vess_D(s)+vess_D(s_old))/2*tab_D/2*lengo.*LP(s)).*p_lum(s_old)...
+                            +(vess_D(s)+vess_D(s_old))/2*tab_D.*lengo.*LP(s).*((p_ins(s)+p_ins(s_old))/2+sigma.*(pb-pI))+...
+                            (((vess_D(s)+vess_D(s+index_bias(gro)))/2*tab_D).^4/128/mu_blood(s)/leng+(vess_D(s)+vess_D(s+index_bias(gro)))/2*tab_D/2.*leng.*LP(s)).*p_lum(s+index_bias(gro))...
+                            -(vess_D(s)+vess_D(s+index_bias(gro)))/2*tab_D.*leng.*LP(s).*((p_ins(s)+p_ins(s+index_bias(gro)))/2+sigma.*(pb-pI)))/...
+                            ((((vess_D(s)+vess_D(s_old))/2*tab_D).^4/128/mu_blood(s)/lengo+(vess_D(s)+vess_D(s_old))/2*tab_D/2.*lengo.*LP(s))+...
+                            (((vess_D(s)+vess_D(s+index_bias(gro)))/2*tab_D).^4/128/mu_blood(s)/leng-(vess_D(s)+vess_D(s+index_bias(gro)))/2*tab_D/2.*leng*LP(s)));
+                        
+                        
+                        
+                        p_ins(s)=(p_ins(s+1)+p_ins(s-1)+p_ins(s+N)+p_ins(s-N)+p_ins(s+(slen))+p_ins(s-(slen))+(h.*L)^2.*LP(s).*SV/KP.*(p_lum(s)-sigma.*(pb-pI)))/...
+                            (6+(h.*L)^2.*LP(s).*SV/KP);
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        ra0(s+index_bias(gro))=(alpph-a0)/c0;
+                        
+                    end
+                    
+                else
+                    
+                    disp('after b1 ...')
+                    
+                    vess{s}.son=s+index_bias(gro);
+                    vess_tag(s)=1;
+                    vess_tag(s+index_bias(gro))=0.95;
+                    if vess_age(s) > 1
+                        vess_age(s+index_bias(gro))=1;
+                    else
+                        vess_age(s+index_bias(gro)) = vess_age(s)/2;
+                    end
+                    vess{s+index_bias(gro)}.count=0;
+                    vess{s+index_bias(gro)}.pare=s;
+                    vess{s+index_bias(gro)}.son=[];
+                    vess{s+index_bias(gro)}.direct=index_bias(gro);
+                    vess{s}.opdirect=index_bias(gro);
+                    vess{s}.tag1=0;
+                    branch_tag(s)=1;
+                    
+                    
+                    ra0(s+index_bias(gro))=(alpph-a0)/c0;
+                    
+                    
+                    index_bias2=setdiff(index_bias,index_bias(gro));
+                    gro1=gro;
+                    acunt = acunt+1;
+                    gro2=direction(s,index_bias2,gro1);
+                    
+                    if isempty(gro2)
+                        gro2 = floor(1 + (26)*rand(1));
+                    end
+                    
+                    leng2=1;
+                    disp('after b2 ...')
+                    vess{s}.tag1=1;
+                    vess{s}.son=s+index_bias2(gro2);
+                    vess_tag(s)=1;
+                    vess_tag(s+index_bias2(gro2))=0.95;
+                    if vess_age(s)>1
+                        vess_age(s+index_bias2(gro2))=1;
+                    else
+                        vess_age(s+index_bias2(gro2)) = vess_age(s)/2;
+                    end
+                    vess{s+index_bias2(gro2)}.count=0;
+                    vess{s+index_bias2(gro2)}.pare=s;
+                    vess{s+index_bias2(gro2)}.son=[];
+                    vess{s+index_bias2(gro2)}.direct=index_bias2(gro2);
+                    vess{s}.opdirect2=index_bias2(gro2);
+                    s_rep(s) = s+index_bias2(gro2);
+                    
+                    ra0(s+index_bias2(gro2))=(alpph-a0)/c0;
+                    
+                    if gro2 == 5 || gro2==11 || gro2 ==13 || gro2==15 || gro2==17 || gro2==23
+                        leng2 = 1*L*h;
+                    elseif gro2 == 1 || gro2==3 || gro2 ==7 || gro2==9 || gro2==19 || gro2==21 || gro2==25 || gro2==27
+                        leng2 = sqrt(3)*L*h;
+                    else
+                        leng2 = sqrt(2)*L*h;
+                    end
+                    
+                    
+                    
+                    if sstt>1 && vess{s}.direct~=0
+                        if gro == 5 || gro==11 || gro ==13 || gro==15 || gro==17 || gro==23
+                            leng1 = 1*L*h;
+                        elseif gro == 1 || gro==3 || gro ==7 || gro==9 || gro==19 || gro==21 || gro==25 || gro==27
+                            leng1 = sqrt(3)*L*h;
+                        else
+                            leng1 = sqrt(2)*L*h;
+                        end
+                        
+                        
+                        if abs(vess{s}.direct)== N || abs(vess{s}.direct)==1 || abs(vess{s}.direct)==(slen)
+                            lengo = 1*L*h;
+                        elseif abs(vess{s}.direct)== (slen+N-1) || abs(vess{s}.direct)==(slen+N+1) || abs(vess{s}.direct)==(slen-N+1) || abs(vess{s}.direct)==(slen-N-1)
+                            lengo = sqrt(3)*L*h;
+                        else
+                            lengo = sqrt(2)*L*h;
+                        end
+                        
+                        s_old=s-vess{s}.direct;
+                        
+                        if ~isempty(gro2)
+                            
+                            p_lum(s)=((((vess_D(s)+vess_D(s_old))/2*tab_D).^4/128/mu_blood(s)/lengo-(vess_D(s)+vess_D(s_old))./2*tab_D/2.*lengo.*LP(s)).*p_lum(s_old)...
+                                +(vess_D(s)+vess_D(s_old))./2*tab_D.*lengo.*LP(s).*((p_ins(s)+p_ins(s_old))./2+sigma.*(pb-pI))+...
+                                (((vess_D(s)+vess_D(s+index_bias(gro)))./2*tab_D).^4/128/mu_blood(s)/leng1+(vess_D(s)+vess_D(s+index_bias(gro)))/2*tab_D/2.*leng1.*LP(s)).*p_lum(s+index_bias(gro))...
+                                -(vess_D(s)+vess_D(s+index_bias(gro)))/2*tab_D.*leng1.*LP(s).*((p_ins(s)+p_ins(s+index_bias(gro)))/2+sigma.*(pb-pI))+ ...
+                                ((((vess_D(s)+vess_D(s+index_bias2(gro2)))/2*tab_D).^4/128/mu_blood(s)/leng2+(vess_D(s)+vess_D(s+index_bias2(gro2)))/2*tab_D/2.*leng2.*LP(s)).*p_lum(s+index_bias2(gro2))...
+                                -(vess_D(s)+vess_D(s+index_bias2(gro2)))/2*tab_D.*leng2.*LP(s).*((p_ins(s)+p_ins(s+index_bias2(gro2)))/2+sigma.*(pb-pI))))/...
+                                ((((vess_D(s)+vess_D(s_old))/2*tab_D).^4/128/mu_blood(s)/lengo+(vess_D(s)+vess_D(s_old))/2*tab_D/2.*lengo*LP(s))+...
+                                (((vess_D(s)+vess_D(s+index_bias(gro)))/2*tab_D).^4/128/mu_blood(s)/leng1-(vess_D(s)+vess_D(s+index_bias(gro)))/2*tab_D/2.*leng1.*LP(s))+...
+                                (((vess_D(s)+vess_D(s+index_bias2(gro2)))/2*tab_D).^4/128/mu_blood(s)/leng2-(vess_D(s)+vess_D(s+index_bias2(gro2)))/2*tab_D/2.*leng2.*LP(s)));
+                            
+                        else
+                            
+                            p_lum(s)=((((vess_D(s)+vess_D(s_old))/2*tab_D).^4/128/mu_blood(s)/lengo-(vess_D(s)+vess_D(s_old))./2*tab_D/2.*lengo.*LP(s)).*p_lum(s_old)...
+                                +(vess_D(s)+vess_D(s_old))./2*tab_D.*lengo.*LP(s).*((p_ins(s)+p_ins(s_old))./2+sigma.*(pb-pI))+...
+                                (((vess_D(s)+vess_D(s+index_bias(gro)))./2*tab_D).^4/128/mu_blood(s)/leng1+(vess_D(s)+vess_D(s+index_bias(gro)))/2*tab_D/2.*leng1.*LP(s)).*p_lum(s+index_bias(gro))...
+                                -(vess_D(s)+vess_D(s+index_bias(gro)))/2*tab_D.*leng1.*LP(s).*((p_ins(s)+p_ins(s+index_bias(gro)))/2+sigma.*(pb-pI)))/...
+                                ((((vess_D(s)+vess_D(s_old))/2*tab_D).^4/128/mu_blood(s)/lengo+(vess_D(s)+vess_D(s_old))/2*tab_D/2.*lengo*LP(s))+...
+                                (((vess_D(s)+vess_D(s+index_bias(gro)))/2*tab_D).^4/128/mu_blood(s)/leng1-(vess_D(s)+vess_D(s+index_bias(gro)))/2*tab_D/2.*leng1.*LP(s)));
+                            
+                            
+                        end
+                        
+                        p_ins(s)=(p_ins(s+1)+p_ins(s-1)+p_ins(s+N)+p_ins(s-N)+p_ins(s+(slen))+p_ins(s-(slen))+(h.*L)^2.*LP(s).*SV/KP.*(p_lum(s)-sigma.*(pb-pI)))/...
+                            (6+(h.*L)^2.*LP(s).*SV/KP);
+                        
+                    end
+                    branchrecord(s)=1;
+                    
+                end
+            end
+        end
+    end
+    
+    vess{s}.count=vess{s}.count+1;
+    
+else
+    
+    vess{s}.count=vess{s}.count+1;
+    
+end
+end
+
+
+function gro=direction(s,index_bias2,gro1)
+
+global N slen TAF pres vess vess_tag celltype p_ins index_bias hotpoint fib iteration acunt probabel con2  con3   startang
+
+nec=1e-4;
+
+direct_pare=vess{s}.direct;
+
+if isempty(vess{s}.direct)
+    scalar=ones(length(index_bias2),1);
+else
+    [A, B, C]=intersect((direct_pare+[1 -1 N -N slen -slen]),index_bias2);
+    scalar=zeros(length(index_bias2),1);
+    scalar(C)=1;
+end
+
+
+prob0=TAF(s+index_bias2)-repmat(TAF(s),length(index_bias2),1);
+prob01=prabability(s);
+
+if hotpoint(s)~=0
+    prob01=setdiff(prob01,prob01((index_bias==index_bias(gro1))));
+end
+
+prob0 = prob0+prob01';
+
+
+prob=prob0;
+
+index1=(find(prob>=0));
+index2=(find(prob<0));
+prob(index1)=1;
+prob(index2)=0;
+
+prob=prob0.*prob;
+
+prob=prob+0;
+
+scalar2=(celltype(s+index_bias2)~=nec)';
+
+prob=prob.*(vess_tag(s+index_bias2)==0)'.*scalar.*scalar2;
+
+gro=[];
+
+if ~isempty((prob>0))
+    
+    if (rand(1)<pres(s))
+        con2=con2+1;
+        
+        pres0=pres(s+index_bias2)'-repmat(pres(s),length(index_bias2),1);
+        prob=pres0.*(prob==1);
+        prob=repmat(norm(prob),length(index_bias2),1).*(prob~=0)-prob;
+        
+    end
+    
+    
+    prob=prob/norm(prob);
+    prob=prob/sum(prob);
+    prob=cumsum(prob);
+    
+    prob=[0; prob];
+    mov=rand(1);
+    
+    for i=1:length(index_bias2)
+        if mov==0
+            gro=1;
+            break
+        else
+            if mov>prob(i) && mov<=prob(i+1)
+                gro=i;
+                break
+            end
+        end
+    end
+    
+else
+    con3=con3+1;
+    gro=[];
+end
+
+end
+
+
+function prob0=prabability(s)
+
+global  CAS TAF fib len N celltype   prooob1 prooob2 slen
+totDays     = 60;
+tau         = totDays*24*3600;
+L           = 1e-2;
+k           = 1/(len*(N-1));
+h           = 1/(N-1);
+
+lamda = tau*k/(L^2*h^2);
+
+Dn = 1e-13;
+kap0 = 2.6e-4;
+alpha=1;
+kap = kap0./(1+alpha.*TAF);
+rho_f = 1e-4;
+alfa = 1e-4;
+pr=[];
+prob0=[];
+
+
+pr(14)=1-(12+8/3)*lamda*Dn-kap(s)*((TAF(s+1)+TAF(s-1)+TAF(s+N)+TAF(s-N)+TAF(s+(slen))+TAF(s-(slen))-6*TAF(s))*lamda+ ...
+    (TAF(s+(N+1))+TAF(s-(N+1))+TAF(s+(N-1))+TAF(s-(N-1))+TAF(s+(slen+1))+TAF(s-(slen+1))+TAF(s+(slen+N))+TAF(s-(slen+N))+TAF(s+(slen-1))+TAF(s-(slen-1))+TAF(s+(slen-N))+TAF(s-(slen-N))-12*TAF(s))*lamda/2+ ...
+    (TAF(s+(slen+N+1))+TAF(s-(slen+N+1))+TAF(s+(slen+N-1))+TAF(s-(slen+N-1))+TAF(s+(slen-N-1))+TAF(s-(slen-N-1))+TAF(s+(slen-N+1))+TAF(s-(slen-N+1))-8*TAF(s))*lamda/3)+alpha*kap(s)/(1+alpha*TAF(s))*...
+    (((TAF(s+1)-TAF(s-1))^2+(TAF(s+N)-TAF(s-N))^2+(TAF(s+(slen))-TAF(s-(slen)))^2)*lamda/4+ ...
+    ((TAF(s+(N+1))-TAF(s-(N+1)))^2+(TAF(s+(N-1))-TAF(s-(N-1)))^2+(TAF(s+(slen+1))-TAF(s-(slen+1)))^2+(TAF(s+(slen+N))-TAF(s-(slen+N)))^2+(TAF(s+(slen-1))-TAF(s-(slen-1)))^2+(TAF(s+(slen-N))-TAF(s-(slen-N)))^2)*lamda/8+ ...
+    ((TAF(s+(slen+N+1))-TAF(s-(slen+N+1)))^2+(TAF(s+(slen+N-1))-TAF(s-(slen+N-1)))^2+(TAF(s+(slen-N-1))-TAF(s-(slen-N-1)))^2+(TAF(s+(slen-N+1))-TAF(s-(slen-N+1)))^2)*lamda/12);
+
+
+pr(15)=lamda*Dn+kap(s)*(TAF(s+1)-TAF(s))*lamda/4;
+%p2
+pr(13)=lamda*Dn-kap(s)*(TAF(s)-TAF(s-1))*lamda/4;
+%p3
+pr(17)=lamda*Dn+kap(s)*(TAF(s+N)-TAF(s))*lamda/4;
+%p4+
+pr(11)=lamda*Dn-kap(s)*(TAF(s)-TAF(s-N))*lamda/4;
+%p5
+pr(18)=lamda/2*Dn+kap(s)*(TAF(s+(N+1))-TAF(s))*lamda/8;
+%p6
+pr(10)=lamda/2*Dn-kap(s)*(TAF(s)-TAF(s-(N+1)))*lamda/8;
+%p7
+pr(12)=lamda/2*Dn+kap(s)*(TAF(s-(N-1))-TAF(s))*lamda/8;
+%p8
+pr(16)=lamda/2*Dn-kap(s)*(TAF(s)-TAF(s+(N-1)))*lamda/8;
+%p9
+pr(23)=lamda*Dn+kap(s)*(TAF(s+(slen))-TAF(s))*lamda/4;
+%p10
+pr(5)=lamda*Dn-kap(s)*(TAF(s)-TAF(s-(slen)))*lamda/4;
+%p11
+pr(27)=lamda/3*Dn+kap(s)*(TAF(s+(slen+N+1))-TAF(s))*lamda/12;
+%p12
+pr(1)=lamda/3*Dn-kap(s)*(TAF(s)-TAF(s-(slen+N+1)))*lamda/12;
+%p13
+pr(21)=lamda/3*Dn+kap(s)*(TAF(s+(slen-N+1))-TAF(s))*lamda/12;
+%p14
+pr(7)=lamda/3*Dn-kap(s)*(TAF(s)-TAF(s-(slen-N+1)))*lamda/12;
+%p15
+pr(19)=lamda/3*Dn+kap(s)*(TAF(s+(slen-N-1))-TAF(s))*lamda/12;
+%p16
+pr(9)=lamda/3*Dn-kap(s)*(TAF(s)-TAF(s-(slen-N-1)))*lamda/12;
+%p17
+pr(25)=lamda/3*Dn+kap(s)*(TAF(s+(slen+N-1))-TAF(s))*lamda/12;
+%p18
+pr(3)=lamda/3*Dn-kap(s)*(TAF(s)-TAF(s-(slen+N-1)))*lamda/12;
+%p19
+pr(24)=lamda/2*Dn+kap(s)*(TAF(s+(slen+1))-TAF(s))*lamda/8;
+%p20
+pr(4)=lamda/2*Dn-kap(s)*(TAF(s)-TAF(s-(slen+1)))*lamda/8;
+%p21
+pr(26)=lamda/2*Dn+kap(s)*(TAF(s+(slen+N))-TAF(s))*lamda/8;
+%p22
+pr(2)=lamda/2*Dn-kap(s)*(TAF(s)-TAF(s-(slen+N)))*lamda/8;
+%p23
+pr(22)=lamda/2*Dn+kap(s)*(TAF(s+(slen-1))-TAF(s))*lamda/8;
+%p24
+pr(6)=lamda/2*Dn-kap(s)*(TAF(s)-TAF(s-(slen-1)))*lamda/8;
+%p25
+pr(20)=lamda/2*Dn+kap(s)*(TAF(s+(slen-N))-TAF(s))*lamda/8;
+%p26
+pr(8)=lamda/2*Dn-kap(s)*(TAF(s+(slen-N))-TAF(s))*lamda/8;
+
+
+prob0 = pr-pr(14);
+
+prooob1 =  prob0;
+prooob2 =  pr;
+
+clear pr;
+
+end
+
+function prob0=prabability_divided(s)
+
+global  TAF fib len N celltype slen
+totDays     = 60;  % Total simulation days (two months)
+tau         = totDays*24*3600;  % Unit: second
+L           = 1e-2;  % Unit: m, computational domain length: 10 mm
+k           = 1/(len*(N-1));  % Normalized time step = 0.0005.     (N-1)0 iterations
+h           = 1/(N-1);
+
+lamda = tau*k/(L^2*h^2);
+
+
+Dn = 1e-13;
+kap0 = 2.6e-4;
+alpha=1;
+kap = kap0./(1+alpha.*TAF);
+rho_f = 1e-4;
+alfa = 1e-4;
+pr=[];
+prob0=[];
+
+pr(14)=1-(12+8/3)*lamda*Dn-rho_f*((fib(s+1)+fib(s-1)+fib(s+(N))+fib(s-(N))+fib(s+(slen))+fib(s-(slen))-6*fib(s))*lamda+ ...
+    (fib(s+(N+1))+fib(s-(N+1))+fib(s+(N-1))+fib(s-(N-1))+fib(s+(slen+1))+fib(s-(slen+1))+fib(s+(slen+N))+fib(s-(slen+N))+fib(s+(slen-1))+fib(s-(slen-1))+fib(s+(slen-N))+fib(s-(slen-N))-12*fib(s))*lamda/2+ ...
+    (fib(s+(slen+N+1))+fib(s-(slen+N+1))+fib(s+(slen+N-1))+fib(s-(slen+N-1))+fib(s+(slen-N-1))+fib(s-(slen-N-1))+fib(s+(slen-N+1))+fib(s-(slen-N+1))-8*fib(s))*lamda/3);
+
+pr(15)=lamda*Dn+rho_f*(fib(s+1)-fib(s-1))*lamda/4;
+%p2
+pr(13)=lamda*Dn-rho_f*(fib(s+1)-fib(s-1))*lamda/4;
+%p3
+pr(17)=lamda*Dn+rho_f*(fib(s+(N))-fib(s-(N)))*lamda/4;
+%p4
+pr(11)=lamda*Dn-rho_f*(fib(s+(N))-fib(s-(N)))*lamda/4;
+%p5
+pr(18)=lamda/2*Dn+rho_f*(fib(s+(N+1))-fib(s-(N+1)))*lamda/8;
+%p6
+pr(10)=lamda/2*Dn-rho_f*(fib(s+(N+1))-fib(s-(N+1)))*lamda/8;
+%p7
+pr(12)=lamda/2*Dn+rho_f*(fib(s-(N-1))-fib(s+(N-1)))*lamda/8;
+%p8
+pr(16)=lamda/2*Dn-rho_f*(fib(s-(N-1))-fib(s+(N-1)))*lamda/8;
+%p9
+pr(23)=lamda*Dn+rho_f*(fib(s+(slen))-fib(s-(slen)))*lamda/4;
+%p10
+pr(5)=lamda*Dn-rho_f*(fib(s+(slen))-fib(s-(slen)))*lamda/4;
+%p11
+pr(27)=lamda/3*Dn+rho_f*(fib(s+(slen+N+1))-fib(s-(slen+N+1)))*lamda/12;
+%p12
+pr(1)=lamda/3*Dn-rho_f*(fib(s+(slen+N+1))-fib(s-(slen+N+1)))*lamda/12;
+%p13
+pr(21)=lamda/3*Dn+rho_f*(fib(s+(slen-N+1))-fib(s-(slen-N+1)))*lamda/12;
+%p14
+pr(7)=lamda/3*Dn-rho_f*(fib(s+(slen-N+1))-fib(s-(slen-N+1)))*lamda/12;
+%p15
+pr(19)=lamda/3*Dn+rho_f*(fib(s+(slen-N-1))-fib(s-(slen-N-1)))*lamda/12;
+%p16
+pr(9)=lamda/3*Dn-rho_f*(fib(s+(slen-N-1))-fib(s-(slen-N-1)))*lamda/12;
+%p17
+pr(25)=lamda/3*Dn+rho_f*(fib(s+(slen+N-1))-fib(s-(slen+N-1)))*lamda/12;
+%p18
+pr(3)=lamda/3*Dn-rho_f*(fib(s+(slen+N-1))-fib(s-(slen+N-1)))*lamda/12;
+%p19
+pr(24)=lamda/2*Dn+rho_f*(fib(s+(slen+1))-fib(s-(slen+1)))*lamda/8;
+%p20
+pr(4)=lamda/2*Dn-rho_f*(fib(s+(slen+1))-fib(s-(slen+1)))*lamda/8;
+%p21
+pr(26)=lamda/2*Dn+rho_f*(fib(s+(slen+N))-fib(s-(slen+N)))*lamda/8;
+%p22
+pr(2)=lamda/2*Dn-rho_f*(fib(s+(slen+N))-fib(s-(slen+N)))*lamda/8;
+%p23
+pr(22)=lamda/2*Dn+rho_f*(fib(s+(slen-1))-fib(s-(slen-1)))*lamda/8;
+%p24
+pr(6)=lamda/2*Dn-rho_f*(fib(s+(slen-1))-fib(s-(slen-1)))*lamda/8;
+%p25
+pr(20)=lamda/2*Dn+rho_f*(fib(s+(slen-N))-fib(s-(slen-N)))*lamda/8;
+%p26
+pr(8)=lamda/2*Dn-rho_f*(fib(s+(slen-N))-fib(s-(slen-N)))*lamda/8;
+
+
+prob0 = pr-pr(14);
+
+clear pr;
+end
+
+
+function cellmigrate()
+
+global celltype N slen cell_energy stackvalue stackcount
+
+stackcount=stackcount+1;
+
+nec=1e-4;
+
+if stackcount<=450
+    
+    s=stackvalue(1);
+    old_cell_energy=stackvalue(2);
+    
+    position=[N,1,slen,-N,-1,-slen];
+    
+    prob=celltype(s+position);
+    index1=(find(prob>0));
+    index2=(find(prob==0));
+    prob(index1)=0;
+    prob(index2)=1;
+    
+    if isempty((prob==1))
+        prob=ones(1,length(position));
+        scalar0=(celltype(s+position)~=nec);
+        prob=prob.*scalar0;
+    end
+    
+    if ~isempty((prob==1))
+        
+        prob=prob/norm(prob);
+        prob=prob/sum(prob);
+        prob=cumsum(prob);
+        
+        prob=[0 prob];
+        mov=rand(1);
+        
+        for i=1:length(position)
+            if mov==0
+                gro=1;
+                break
+            else
+                if mov>prob(i) && mov<=prob(i+1)
+                    gro=i;
+                    break
+                end
+            end
+        end
+        
+        if celltype(s+position(gro))==0
+            celltype(s+position(gro))=1;
+            cell_energy(s+position(gro))=old_cell_energy;
+        else
+            celltype(s+position(gro))=1;
+            old_cell_energy_move=cell_energy(s+position(gro));
+            cell_energy(s+position(gro))=old_cell_energy;
+            stackvalue=[s+position(gro), old_cell_energy_move];
+            cellmigrate()
+        end
+        
+    end
+end
+
+end
+
+
+function cellLocation(s)
+
+global celltype cell_energy stackvalue index_bias stackcount pres pins_t  vess_tag p_ins activity slen
+
+stackcount=0;
+
+nec=1e-4;
+gro=[];
+
+prob=celltype(s+index_bias);
+index1=(find(prob>0));
+index2=(find(prob==0));
+prob(index1)=0;
+prob(index2)=1;
+prob0=prabability_divided(s);
+prob0((prob0<0))=0;
+prob0=prob0./(max(prob0)+1e-8);
+
+if isempty((prob==1))
+    
+    vs=vess_tag;
+    vs(s)=0;
+    prob3=vs(s+index_bias);
+    
+    probb0=0;
+    probb0(probb0<0)=0;
+    probb0(probb0>0)=1;
+    
+    nutrient= activity(s+index_bias);
+    
+    prob=ones(1,length(index_bias));
+    scalar0=(celltype(s+index_bias)~=nec); %necrotic cells are fixed
+    prob=prob.*scalar0.*nutrient;
+    prob0=prob0.*scalar0;
+    prob3=prob3.*scalar0;
+    probb0=probb0.*scalar0;
+    
+    if ~isempty((prob==1))
+        
+        
+        
+        prob=prob+prob0+1000000*prob3;
+        
+        
+        
+        prob=prob/norm(prob);
+        prob=prob/sum(prob);
+        prob=cumsum(prob);
+        
+        prob=[0 prob];
+        mov=rand(1);
+        
+        for i=1:length(index_bias)
+            if mov==0
+                gro=1;
+                break
+            else
+                if mov>prob(i) && mov<=prob(i+1)
+                    gro=i;
+                    break
+                end
+            end
+        end
+        
+        
+        if celltype(s+index_bias(gro))==0
+            celltype(s+index_bias(gro))=1;
+            cell_energy(s)=15;
+            cell_energy(s+index_bias(gro))=15;
+        else
+            celltype(s+index_bias(gro))=1;
+            cell_energy(s)=15;
+            old_cell_energy=cell_energy(s+index_bias(gro));
+            cell_energy(s+index_bias(gro))=15;
+            stackvalue=[s+index_bias(gro), old_cell_energy];
+            cellmigrate(prob0,prob3)
+        end
+        
+    end
+else
+    
+    scalar=pres(s+index_bias);
+    scalar=scalar-pres(s);
+    
+    index1=(find(scalar>=0));
+    index2=(find(scalar<0));
+    scalar(index1)=0;
+    scalar(index2)=1;
+    
+    nutrient= activity(s+index_bias);
+    prob=prob.*scalar.*nutrient;
+    
+    vs=vess_tag;
+    vs(s)=0;
+    prob3=vs(s+index_bias);
+    
+    probb0=0;
+    probb0(probb0<0)=0;
+    probb0(probb0>0)=1;
+    
+    index0 = (celltype(s+index_bias)==0);
+    prob0=(prob0).*index0;
+    prob3=prob3.*index0;
+    probb0=probb0.*index0;
+    
+    prob0=prob+prob0+1000000*prob3;
+    
+    
+    
+    prob0=prob0/norm(prob0);
+    prob0=prob0/sum(prob0);
+    prob0=cumsum(prob0);
+    
+    prob0=[0 prob0];
+    mov=rand(1);
+    
+    for i=1:length(prob0)
+        if mov==0
+            gro=1;
+            break
+        else
+            if mov>prob0(i) && mov<=prob0(i+1)
+                gro=i;
+                break
+            end
+        end
+    end
+    
+    
+    
+    
+    
+    
+    if isempty(gro)
+        mov=rand(1);
+        
+        for i=1:length(prob0)
+            if mov==0
+                gro=1;
+                break
+            else
+                if mov>prob0(i) && mov<=prob0(i+1)
+                    gro=i;
+                    break
+                end
+            end
+        end
+    end
+    
+    
+    
+    celltype(s+index_bias(gro))=1;
+    cell_energy(s)=15;
+    cell_energy(s+index_bias(gro))=15;
+    
+    
+    
+end
+end
+
+
+function boundary=mainFarField(threedLattice,len)
+global N N1
+
+geom.a=find(threedLattice(:,1)==0);      %left   boundary
+geom.b=find(threedLattice(:,1)==len);    %right  boundary
+geom.c=find(threedLattice(:,2)==0);      %front  boundary
+geom.d=find(threedLattice(:,2)==len);    %back   boundary
+geom.e=find(threedLattice(:,3)==0);      %bottom boundary
+geom.f=find(threedLattice(:,3)==len);    %top    boundary
+
+geom.c=setdiff(geom.c,[geom.a;geom.b]);
+geom.d=setdiff(geom.d,[geom.a;geom.b]);
+geom.e=setdiff(geom.e,[geom.a;geom.b;geom.c;geom.d]);
+geom.f=setdiff(geom.f,[geom.a;geom.b;geom.c;geom.d]);
+
+boundary=[geom.a;geom.b;geom.c;geom.d;geom.e;geom.f];
+
+end
+
+
+function visualizationVessel()
+
+global N slen vess vess_tag vess_age pres u_lum p_lum WSS mu_blood Ang1 ra0 pins_t waste vess_D
+
+vess_index=find(vess_tag>0);
+
+[junk,sortindex]=sort(-vess_age(vess_index));
+
+vess_index=vess_index(sortindex);
+
+WSS(4235762)=mean(WSS(vess_tag>0))/10;
+mmin=min(vess_D(vess_tag>0));
+mmax=max(vess_D(vess_tag>0));
+
+hold on
+
+for i=1:length(vess_index)
+    
+    s=vess_index(i);
+    
+    z0=(s-mod(s,slen))/slen;
+    y0=(mod(s,slen)-mod(mod(s,slen),N))/N;
+    x0=s-z0*slen-y0*N;
+    
+    s2=vess{s}.pare;
+    
+    z1=(s2-mod(s2,slen))/slen;
+    y1=(mod(s2,slen)-mod(mod(s2,slen),N))/N;
+    x1=s2-z1*slen-y1*N;
+    plot3([x0 x1], [y0 y1], [z0 z1], '-r','LineWidth', 3*vess_age(s)/(vess_age(s)+500));
+    
+    
+end
+
+hold off
+
+end
+
+
+function initialization()
+global celltype cell_energy N N1 len slen threedLattice activity slen
+
+h=len/(N-1);
+
+num_init_cell=5;
+init_size=0.25;
+
+
+index0=(N1-1)/2*slen+(N-1)/2*N+(N+1)/2;
+init_cell=threedLattice(index0,:);
+
+celltype(index0)=1;
+cell_energy(index0)=15;
+
+Mat_radius = [0.1793    0.0928    0.1199    0.1402];
+Mat_thetal1 = [0.9848    0.2331    0.5748    0.8741];
+Mat_thetal2 = [0.8167    0.9745    0.5811    0.2300];
+
+if num_init_cell>1
+    for i=1:num_init_cell-1
+        radius=Mat_radius(i);
+        theta1=Mat_thetal1(i);
+        theta2=Mat_thetal2(i);
+        z=round(radius*sin(2*pi*theta1)/h);
+        x=round(radius*cos(2*pi*theta1)*cos(2*pi*theta2)/h);
+        y=round(radius*cos(2*pi*theta1)*sin(2*pi*theta2)/h);
+        index=index0+x+y*N+z*slen;
+        init_cell=[init_cell;threedLattice(index,:)];
+        celltype(index)=1;
+        cell_energy(index)=15;
+        activity(index)=1;
+    end
+end
+
+init_cell=init_cell*20;
+
+
+end
+
+
+function plum_correct(s)
+
+global vess p_lum p_ins len N vess_D mu_blood WSS u_lum p_lum_new p_ins_new celltype  LP pres slen
+tab_D=50e-6;
+leng2=1;
+bb=0;
+p0=60;
+L           = 1e-2;
+k           = 1/(len*(N-1));
+h           = 1/(N-1);
+sigma = 0.91e-2;
+pb = 2.67e3*0.0075;
+pI = 1.33e3*0.0075;
+LPP_N = 3.6e-10;
+LPP = LPP_N;
+LPP_T = 28e-10;
+KP = 9e-15*4;
+SV = 7e3;
+
+if celltype(s)>1e-4
+    
+    pI = 2e3*0.0075;
+    sigma=8.7e-5;
+    SV = 2e4;
+    KP = 9e-15*(1-1.5*pres(s)/(p0+pres(s)));
+    
+end
+
+
+
+SV=SV.*vess_D(s)/2;
+
+
+if abs(vess{s}.opdirect)== N || abs(vess{s}.opdirect)==1 || abs(vess{s}.opdirect)==(slen)
+    leng1 = 1*L*h;
+elseif abs(vess{s}.opdirect)== (slen+N-1) || abs(vess{s}.opdirect)==(slen+N+1) || abs(vess{s}.opdirect)==(slen-N+1) || abs(vess{s}.opdirect)==(slen-N-1)
+    leng1 = sqrt(3)*L*h;
+else
+    leng1 = sqrt(2)*L*h;
+end
+
+
+
+if abs(vess{s}.direct)== N || abs(vess{s}.direct)==1 || abs(vess{s}.direct)==(slen)
+    lengo = 1*L*h;
+elseif abs(vess{s}.direct)== (slen+N-1) || abs(vess{s}.direct)==(slen+N+1) || abs(vess{s}.direct)==(slen-N+1) || abs(vess{s}.direct)==(slen-N-1)
+    lengo = sqrt(3)*L*h;
+else
+    lengo = sqrt(2)*L*h;
+end
+
+
+s_old=s-vess{s}.direct;
+s_old2 = s+vess{s}.opdirect;
+
+if vess{s}.tag1==1
+    s_old3 = s+vess{s}.opdirect2;
+    if abs(vess{s}.opdirect2)== N || abs(vess{s}.opdirect2)==1 || abs(vess{s}.opdirect2)==(slen)
+        leng2 = 1*L*h;
+    elseif abs(vess{s}.opdirect2)== (slen+N-1) || abs(vess{s}.opdirect2)==(slen+N+1) || abs(vess{s}.opdirect2)==(slen-N+1) || abs(vess{s}.opdirect2)==(slen-N-1)
+        leng2 = sqrt(3)*L*h;
+    else
+        leng2 = sqrt(2)*L*h;
+    end
+    p_lum_new(s)=((((vess_D(s)+vess_D(s_old))/2*tab_D).^4/128/mu_blood(s)/lengo-(vess_D(s)+vess_D(s_old))./2*tab_D/2.*lengo.*LP(s)).*p_lum_new(s_old)...
+        +(vess_D(s)+vess_D(s_old))./2*tab_D.*lengo.*LP(s).*((p_ins_new(s)+p_ins_new(s_old))./2+sigma.*(pb-pI))+...
+        (((vess_D(s)+vess_D(s_old2))./2*tab_D).^4/128/mu_blood(s)/leng1+(vess_D(s)+vess_D(s_old2))/2*tab_D/2.*leng1.*LP(s)).*p_lum_new(s_old2)...
+        -(vess_D(s)+vess_D(s_old2))/2*tab_D.*leng1.*LP(s).*((p_ins_new(s)+p_ins_new(s_old2))/2+sigma.*(pb-pI))+ ...
+        ((((vess_D(s)+vess_D(s_old3))/2*tab_D).^4/128/mu_blood(s)/leng2+(vess_D(s)+vess_D(s_old3))/2*tab_D/2.*leng2.*LP(s)).*p_lum_new(s_old3)...
+        -(vess_D(s)+vess_D(s_old3))/2*tab_D.*leng2.*LP(s).*((p_ins_new(s)+p_ins_new(s_old3))/2+sigma.*(pb-pI))))/...
+        ((((vess_D(s)+vess_D(s_old))/2*tab_D).^4/128/mu_blood(s)/lengo+(vess_D(s)+vess_D(s_old))/2*tab_D/2.*lengo*LP(s))+...
+        (((vess_D(s)+vess_D(s_old2))/2*tab_D).^4/128/mu_blood(s)/leng1-(vess_D(s)+vess_D(s_old2))/2*tab_D/2.*leng1.*LP(s))+...
+        (((vess_D(s)+vess_D(s_old3))/2*tab_D).^4/128/mu_blood(s)/leng2-(vess_D(s)+vess_D(s_old3))/2*tab_D/2.*leng2.*LP(s))+1e-18);
+    
+    
+else
+    p_lum_new(s)=((((vess_D(s)+vess_D(s_old))/2*tab_D).^4/128/mu_blood(s)/lengo-(vess_D(s)+vess_D(s_old))./2*tab_D/2.*lengo.*LP(s)).*p_lum_new(s_old)...
+        +(vess_D(s)+vess_D(s_old))./2*tab_D.*lengo.*LP(s).*((p_ins_new(s)+p_ins_new(s_old))./2+sigma.*(pb-pI))+...
+        (((vess_D(s)+vess_D(s_old2))./2*tab_D).^4/128/mu_blood(s)/leng1+(vess_D(s)+vess_D(s_old2))/2*tab_D/2.*leng1.*LP(s)).*p_lum_new(s_old2)...
+        -(vess_D(s)+vess_D(s_old2))/2*tab_D.*leng1.*LP(s).*((p_ins_new(s)+p_ins_new(s_old2))/2+sigma.*(pb-pI)))/...
+        ((((vess_D(s)+vess_D(s_old))/2*tab_D).^4/128/mu_blood(s)/lengo+(vess_D(s)+vess_D(s_old))/2*tab_D/2.*lengo*LP(s))+...
+        (((vess_D(s)+vess_D(s_old2))/2*tab_D).^4/128/mu_blood(s)/leng1-(vess_D(s)+vess_D(s_old2))/2*tab_D/2.*leng1.*LP(s))+1e-18);
+    
+end
+
+
+
+
+p_ins_new(s)=(p_ins_new(s+1)+p_ins_new(s-1)+p_ins_new(s+N)+p_ins_new(s-N)+p_ins_new(s+(slen))+p_ins_new(s-(slen))...
+    +(h.*L)^2.*LP(s).*SV/KP.*(p_lum_new(s)-sigma.*(pb-pI)))/...
+    (6+(h.*L)^2.*LP(s).*SV/KP);
+
+
+WSS(s)=abs(p_lum_new(s_old)-p_lum_new(s))*(vess_D(s_old)+vess_D(s))/2*tab_D/2/2/lengo;    %mmHg
+
+
+u_lum(s)=((vess_D(s_old)+vess_D(s))/2*tab_D).^2*abs(p_lum_new(s_old)-p_lum_new(s))/32/lengo/((mu_blood(s_old)+mu_blood(s))/2);    % averaged velocity m/s
+
+end
+
+
+function visualTumor3D()
+
+% visualization();
+
+hold on
+
+% visualizationVessel();
+
+view(75.0, 16.0)
+
+box off
+
+end
+
+function  visualVessel3D()
+
+filepath=cd;
+filepath=strcat(filepath,'\vesselimage2D.bmp');
+data=imread(filepath);
+image01=data(:,:,2);
+image01=im2double(image01);
+[N,N]=size(image01);
+test=image01(:);
+index=find(test<1);
+
+[y,x] = meshgrid([1:1000]);
+
+z1 = 200*exp(-x.^2/(2*380^2));
+z2 = 300*exp(-((x-450).^2+(y-480).^2)/(2*300^2))-60;
+z3 = 200*exp(-(x-1050).^2/(2*100^2));
+z4 = 200*exp(-(y-1080).^2/(2*100^2));
+z5 = -150*exp(-((x-1000).^2+(y-1000).^2)/(2*100^2));
+z= (z1+z2+z3+z4+z5+50)/2;
+
+yy0=(index-mod(index,N))/N;
+xx0=index-yy0*N;
+zz0=test(index)+z(index);
+
+yy=((index-mod(index,N))/N)/5;
+xx=(index-yy0*N)/5;
+zz=(test(index)+z(index)-42)/147*200;
+
+index=find(xx==0);
+xx(index)=[];
+yy(index)=[];
+zz(index)=[];
+
+scatter3(xx,yy,zz,40,'r.')
+
+axis([0 200 0 200 0 200])
+title('3D Artificial Vasculature')
+view(72,30)
+
+end
+
+function visualization()
+
+global N N1 len celltype threedLattice
+
+cell=celltype;
+
+cell(find(cell>0))=1;
+
+kkk=reshape(cell*3,N,N,N1);
+
+
+fig=figure;
+
+
+phandles = contourslice(kkk,[],[],[(N1+1)/2],1);
+
+daspect([1,1,1])
+lightangle(45,30);
+
+close(fig)
+
+figure
+
+kkk = smooth3(kkk,'gaussian');
+
+daspect([1,1,1])
+lightangle(45,30);
+
+hiso = patch(isosurface(kkk,1),...
+    'FaceColor',[1,.75,.65],...
+    'EdgeColor','None');
+
+set(hiso,'SpecularColorReflectance',0,'SpecularExponent',50)
+
+axis([0 N-1 0 N-1 0 N1-1])
+grid on
+box on
+xlabel('x')
+ylabel('y')
+zlabel('z')
+title('3D Tumor and Angiogenesis')
+
+alpha(0.4)
+view(72,30)
+
+box off
+
+end
